@@ -1,0 +1,7 @@
+# Data is licensed by Delhi Transport Stack — do not commit
+data/
+.DS_Store
+__pycache__/
+.venv/
+.env
+*.ipynb_checkpoints
