@@ -27,6 +27,7 @@ OUT = C.ROOT / "data/raw/gtfs_rt"
 IST = timezone(timedelta(hours=5, minutes=30))
 POLL_S = 20
 FLUSH_S = 60
+LOCK_PORT = 47811
 
 
 def fetch(key: str):
@@ -67,6 +68,14 @@ def main() -> None:
     key = api_key()
     if not key:
         sys.exit(".env に DTS_API_KEY がありません")
+    # 二重起動の防止: ローカルのポートを1つ確保できたときだけ動く（2つ目は即終了）
+    import socket
+    guard = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        guard.bind(("127.0.0.1", LOCK_PORT))
+    except OSError:
+        logging.info("すでに記録が動いているので終了します")
+        return
     last_ts: dict[str, int] = {}
     buf: list = []
     last_flush = time.time()
