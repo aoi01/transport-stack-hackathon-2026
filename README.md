@@ -16,7 +16,7 @@ Place downloaded files under `data/raw/`:
 
 | Folder | Dataset | Size | Status (2026-11-15) |
 |---|---|---|---|
-| `data/raw/bus_gps/` | Bus GPS, DTC, Oct 2026 (hackathon, public link) | 16.1 GB .7z / 124 GB unpacked | Available, not downloaded |
+| `data/raw/bus_gps/` | Bus GPS, DTC, Oct 2026 (hackathon, public link) | 16.1 GB .7z / 124 GB unpacked | Downloaded (checksum OK); extract one day at a time |
 | `data/raw/ticketing/` | Bus e-ticketing, Oct 2026, ~2.56M tickets (hackathon, public link) | 66 MB .zip / 290 MB | Downloaded (checksum OK) |
 | `data/raw/gtfs_static/` | Delhi Buses: GTFS Static (DTC / DoT), feed v32 | 30 MB .zip | Downloaded |
 | — | Delhi Buses: GTFS-RT feed (API, `x-api-key`) | ~0.6 MB per call | Working (key in `.env`) |
