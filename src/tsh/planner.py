@@ -17,7 +17,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import numpy as np
 import pandas as pd
@@ -26,6 +26,7 @@ from . import common as C
 from .crowding import CrowdingModel
 from .traveltime import TravelTimeModel
 
+IST = timezone(timedelta(hours=5, minutes=30))
 WALK_MPS = 4.5 / 3.6
 DETOUR = 1.3
 ACCESS_M = 800
@@ -83,7 +84,8 @@ class Planner:
 
     # ------------------------------------------------------------------
     def plan(self, o_lat, o_lng, d_lat, d_lng, depart: datetime, sort: str = "fastest",
-             max_options: int = 3, live_wait=None) -> dict:
+             max_options: int = 3, live_wait=None, live_links=None) -> dict:
+        self._live_links = live_links
         O = self.near_stops(o_lat, o_lng)
         D = self.near_stops(d_lat, d_lng)
         Dmap = defaultdict(list)          # route_id -> [(j, stop, walk_m)]
@@ -179,6 +181,14 @@ class Planner:
                 wait = self.tt.wait_sec(rid, t)
             t_board = t + timedelta(seconds=wait)
             ride = self.tt.ride_sec(rid, i, j, t_board)
+            # 直前のバスによる補正（記録した GTFS-RT の直近 30 分の実績）。出発が今から 15 分以内のときだけ
+            corr, corr_n = 1.0, 0
+            ll = getattr(self, "_live_links", None)
+            if ll is not None:
+                now = datetime.now(IST).replace(tzinfo=None)
+                if abs((t_board - now).total_seconds()) <= 15 * 60:
+                    corr, corr_n = ll.factor(rid, i, j, pd.Timestamp(now, tz=C.TZ).timestamp())
+                    ride *= corr
             quiet = self.tt.ride_sec(rid, i, j, t_board.replace(hour=14, minute=0))
             sched = self.tt.sched_ride_sec(rid, i, j, t_board)
             crowd = self.cr.leg(rid, i, j, dtp, t_board.hour)
@@ -190,6 +200,7 @@ class Planner:
                 "stops": j - i,
                 "wait_min": round(wait / 60, 1), "wait_source": src,
                 "ride_min": round(ride / 60, 1),
+                "ride_live_factor": round(corr, 3), "ride_live_obs": corr_n,
                 "ride_min_at_14h": round(quiet / 60, 1),
                 "ride_min_timetable": round(sched / 60, 1) if sched else None,
                 "board_time": t_board.strftime("%H:%M"),
