@@ -1,0 +1,80 @@
+{
+ "集計 V0（最初の版）": {
+  "n": 20000,
+  "MAE_min": 4.49,
+  "MAPE_%": 17.2,
+  "MedAPE_%": 11.5,
+  "within20%_%": 72.1,
+  "bias_min": -2.92,
+  "median_err_min": -0.74,
+  "actual_mean_min": 21.2
+ },
+ "集計＋直前のバス補正 V4_W30_c20": {
+  "n": 20000,
+  "MAE_min": 4.2,
+  "MAPE_%": 16.3,
+  "MedAPE_%": 10.8,
+  "within20%_%": 74.5,
+  "bias_min": -2.51,
+  "median_err_min": -0.62,
+  "actual_mean_min": 21.2,
+  "share_with_probe_%": 99.3
+ },
+ "LightGBM（過去のみ）": {
+  "n": 20000,
+  "MAE_min": 5.19,
+  "MAPE_%": 19.2,
+  "MedAPE_%": 13.9,
+  "within20%_%": 65.0,
+  "bias_min": -4.26,
+  "median_err_min": -1.61,
+  "actual_mean_min": 21.2
+ },
+ "LightGBM（過去＋直近）": {
+  "n": 20000,
+  "MAE_min": 4.21,
+  "MAPE_%": 16.0,
+  "MedAPE_%": 11.0,
+  "within20%_%": 74.6,
+  "bias_min": -3.05,
+  "median_err_min": -1.08,
+  "actual_mean_min": 21.2
+ },
+ "feature_importance_gain": {
+  "hr_f": 133777.0,
+  "dow": 71724.0,
+  "weekend": 446.0,
+  "link_m": 168731.0,
+  "lh_dt_hr": 338432.0,
+  "ln_dt_hr": 90186.0,
+  "lh_dt": 52483.0,
+  "lh_all": 103667.0,
+  "spread": 91823.0,
+  "lh_route": 190911.0,
+  "ln_route": 61512.0,
+  "rec_link": 566077.0,
+  "rec_link_n": 62618.0,
+  "rec_route": 148739.0,
+  "rec_route_n": 51608.0
+ },
+ "LightGBM 公平版（過去のみ）": {
+  "n": 20000,
+  "MAE_min": 4.66,
+  "MAPE_%": 17.4,
+  "MedAPE_%": 12.0,
+  "within20%_%": 70.7,
+  "bias_min": -3.48,
+  "median_err_min": -1.13,
+  "actual_mean_min": 21.2
+ },
+ "LightGBM 公平版（過去＋直近）": {
+  "n": 20000,
+  "MAE_min": 3.92,
+  "MAPE_%": 15.4,
+  "MedAPE_%": 10.4,
+  "within20%_%": 76.6,
+  "bias_min": -2.26,
+  "median_err_min": -0.55,
+  "actual_mean_min": 21.2
+ }
+}

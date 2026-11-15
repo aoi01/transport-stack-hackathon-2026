@@ -1,0 +1,197 @@
+{
+ "V0": {
+  "n": 20000,
+  "MAE_min": 4.49,
+  "MAPE_%": 17.2,
+  "MedAPE_%": 11.5,
+  "within20%_%": 72.1,
+  "bias_min": -2.92,
+  "median_err_min": -0.74,
+  "actual_mean_min": 21.2
+ },
+ "V1": {
+  "n": 20000,
+  "MAE_min": 4.48,
+  "MAPE_%": 17.2,
+  "MedAPE_%": 11.5,
+  "within20%_%": 72.0,
+  "bias_min": -2.86,
+  "median_err_min": -0.71,
+  "actual_mean_min": 21.2
+ },
+ "V2": {
+  "n": 20000,
+  "MAE_min": 4.48,
+  "MAPE_%": 17.2,
+  "MedAPE_%": 11.5,
+  "within20%_%": 72.0,
+  "bias_min": -2.88,
+  "median_err_min": -0.69,
+  "actual_mean_min": 21.2
+ },
+ "V3": {
+  "n": 20000,
+  "MAE_min": 4.43,
+  "MAPE_%": 16.9,
+  "MedAPE_%": 11.4,
+  "within20%_%": 72.7,
+  "bias_min": -2.82,
+  "median_err_min": -0.67,
+  "actual_mean_min": 21.2
+ },
+ "V3_k3": {
+  "n": 20000,
+  "MAE_min": 4.42,
+  "MAPE_%": 16.9,
+  "MedAPE_%": 11.3,
+  "within20%_%": 72.8,
+  "bias_min": -2.79,
+  "median_err_min": -0.67,
+  "actual_mean_min": 21.2
+ },
+ "V3_k30": {
+  "n": 20000,
+  "MAE_min": 4.45,
+  "MAPE_%": 17.1,
+  "MedAPE_%": 11.5,
+  "within20%_%": 72.3,
+  "bias_min": -2.85,
+  "median_err_min": -0.68,
+  "actual_mean_min": 21.2
+ },
+ "V4_W15_c5": {
+  "n": 20000,
+  "MAE_min": 4.26,
+  "MAPE_%": 16.6,
+  "MedAPE_%": 11.3,
+  "within20%_%": 73.6,
+  "bias_min": -2.38,
+  "median_err_min": -0.59,
+  "actual_mean_min": 21.2,
+  "share_with_probe_%": 98.5
+ },
+ "V4_W15_c20": {
+  "n": 20000,
+  "MAE_min": 4.21,
+  "MAPE_%": 16.2,
+  "MedAPE_%": 11.0,
+  "within20%_%": 74.7,
+  "bias_min": -2.53,
+  "median_err_min": -0.62,
+  "actual_mean_min": 21.2,
+  "share_with_probe_%": 98.5
+ },
+ "V4_W30_c5": {
+  "n": 20000,
+  "MAE_min": 4.24,
+  "MAPE_%": 16.5,
+  "MedAPE_%": 11.0,
+  "within20%_%": 73.9,
+  "bias_min": -2.42,
+  "median_err_min": -0.61,
+  "actual_mean_min": 21.2,
+  "share_with_probe_%": 99.3
+ },
+ "V4_W30_c20": {
+  "n": 20000,
+  "MAE_min": 4.2,
+  "MAPE_%": 16.3,
+  "MedAPE_%": 10.8,
+  "within20%_%": 74.5,
+  "bias_min": -2.51,
+  "median_err_min": -0.62,
+  "actual_mean_min": 21.2,
+  "share_with_probe_%": 99.3
+ },
+ "V4_W60_c5": {
+  "n": 20000,
+  "MAE_min": 4.22,
+  "MAPE_%": 16.4,
+  "MedAPE_%": 11.0,
+  "within20%_%": 74.4,
+  "bias_min": -2.46,
+  "median_err_min": -0.62,
+  "actual_mean_min": 21.2,
+  "share_with_probe_%": 99.6
+ },
+ "V4_W60_c20": {
+  "n": 20000,
+  "MAE_min": 4.2,
+  "MAPE_%": 16.3,
+  "MedAPE_%": 10.9,
+  "within20%_%": 74.7,
+  "bias_min": -2.51,
+  "median_err_min": -0.62,
+  "actual_mean_min": 21.2,
+  "share_with_probe_%": 99.6
+ },
+ "best": "V4_W30_c20",
+ "by_period": {
+  "その他": {
+   "V0": {
+    "n": 11273,
+    "MAE_min": 4.04,
+    "MAPE_%": 16.8,
+    "MedAPE_%": 11.3,
+    "within20%_%": 73.2,
+    "bias_min": -2.52,
+    "median_err_min": -0.56,
+    "actual_mean_min": 19.5
+   },
+   "V4_W30_c20": {
+    "n": 11273,
+    "MAE_min": 3.82,
+    "MAPE_%": 16.0,
+    "MedAPE_%": 10.7,
+    "within20%_%": 75.1,
+    "bias_min": -2.24,
+    "median_err_min": -0.52,
+    "actual_mean_min": 19.5
+   }
+  },
+  "夕ピーク(17-20時)": {
+   "V0": {
+    "n": 4534,
+    "MAE_min": 5.61,
+    "MAPE_%": 19.2,
+    "MedAPE_%": 13.8,
+    "within20%_%": 64.9,
+    "bias_min": -3.93,
+    "median_err_min": -1.47,
+    "actual_mean_min": 25.0
+   },
+   "V4_W30_c20": {
+    "n": 4534,
+    "MAE_min": 5.13,
+    "MAPE_%": 17.8,
+    "MedAPE_%": 12.6,
+    "within20%_%": 69.2,
+    "bias_min": -3.18,
+    "median_err_min": -1.18,
+    "actual_mean_min": 25.0
+   }
+  },
+  "朝ピーク(8-10時)": {
+   "V0": {
+    "n": 4193,
+    "MAE_min": 4.48,
+    "MAPE_%": 15.9,
+    "MedAPE_%": 10.1,
+    "within20%_%": 76.8,
+    "bias_min": -2.94,
+    "median_err_min": -0.64,
+    "actual_mean_min": 21.6
+   },
+   "V4_W30_c20": {
+    "n": 4193,
+    "MAE_min": 4.24,
+    "MAPE_%": 15.1,
+    "MedAPE_%": 9.6,
+    "within20%_%": 78.6,
+    "bias_min": -2.53,
+    "median_err_min": -0.43,
+    "actual_mean_min": 21.6
+   }
+  }
+ }
+}

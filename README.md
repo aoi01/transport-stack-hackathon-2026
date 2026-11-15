@@ -12,7 +12,7 @@ Process, methods and validation results: [`docs/phase1_prototype.md`](docs/phase
 
 | | Held-out week (Oct 25–31) result |
 |---|---|
-| P1 in-vehicle time | median abs. error **11.5%** (GTFS timetable 25.9%) |
+| P1 in-vehicle time | median abs. error **11.5%** (GTFS timetable 25.9%); **10.4%** with LightGBM + recent preceding-bus data (section 10) |
 | P1 door-to-door incl. wait | 24.9% with live GPS (15.9% when the next bus is visible), 36.5% timetable |
 | P2 crowding | train→test correlation **0.83** for high-confidence cells, crowding level agreement 74–80%, within one level 97% |
 | Planner | 100% of 200 random OD pairs answered, 0.13 s median |
