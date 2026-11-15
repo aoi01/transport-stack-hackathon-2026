@@ -14,12 +14,15 @@ Phase 1: Problem 2 — Crowdedness-aware journey planner (tentative)
 Data comes from [Delhi Transport Stack](https://delhi.transportstack.in) and is **not** committed (see `.gitignore`).
 Place downloaded files under `data/raw/`:
 
-| Folder | Dataset | Status |
-|---|---|---|
-| `data/raw/gtfs_static/` | Delhi Buses: GTFS Static Data v1 (DTC / DoT) | Downloaded |
-| `data/raw/gtfs_rt/` | Delhi Buses: GTFS-RT feed (API) | Subscribed |
-| `data/raw/metro_footfall/` | Delhi Metro: Hourly Footfall (DMRC) | Approval pending |
-| `data/raw/ticketing/` | E-ticketing / ETM data (hackathon) | Awaiting access details |
+| Folder | Dataset | Size | Status (2026-11-15) |
+|---|---|---|---|
+| `data/raw/bus_gps/` | Bus GPS, DTC, Oct 2026 (hackathon, public link) | 16.1 GB .7z / 124 GB unpacked | Available, not downloaded |
+| `data/raw/ticketing/` | Bus e-ticketing, Oct 2026, ~2.56M tickets (hackathon, public link) | 66 MB .zip / 290 MB | Downloaded (checksum OK) |
+| `data/raw/gtfs_static/` | Delhi Buses: GTFS Static (DTC / DoT), feed v32 | 30 MB .zip | Downloaded |
+| — | Delhi Buses: GTFS-RT feed (API, `x-api-key`) | ~0.6 MB per call | Working (key in `.env`) |
+| `data/raw/metro_footfall/` | Delhi Metro: Hourly Footfall (DMRC) | — | Approved, not downloaded |
+
+Full inventory, access details and how to handle the large GPS archive: [`docs/data.md`](docs/data.md).
 
 ## Key dates (IST)
 

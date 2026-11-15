@@ -1,0 +1,94 @@
+# データ一覧と入手状況
+
+最終確認: 2026-11-15（ハッカソンページ・各問題の詳細ブリーフ・Transport Stack ポータルのマイページを確認）
+
+データは Delhi Transport Stack の利用規約の対象なので、**リポジトリにはコミットしない**（`data/` は `.gitignore` で除外済み）。各自 `data/` 以下に置く。
+
+## 1. 一覧
+
+| # | データ | 使う問題 | 入手方法 | 申請・承認 | 容量 | 手元の状況 |
+|---|---|---|---|---|---|---|
+| A | **バス GPS（DTC、2026年10月1〜31日）** | 1, 4（2 の便の紐付けにも使える） | 公開リンク（R2）から直接ダウンロード | 不要 | **16.1 GB（.7z）／展開後 124 GB** | 未ダウンロード |
+| B | **バス電子乗車券（2026年10月、約256万件）** | 2, 3 | 公開リンク（R2）から直接ダウンロード | 不要 | 66 MB（.zip）／展開後 290 MB | **取得済み**（`data/raw/ticketing/`、チェックサム OK） |
+| C | バス GTFS Static（DTC / DoT） | 全問題 | 承認メールのリンク／ポータルの Download | 承認済み（Open） | 30 MB（.zip）／展開後 約170 MB | **取得済み**（`data/raw/gtfs_static/`、v32） |
+| D | バス GTFS-RT（リアルタイム位置） | 1（ライブ部分） | **API**（`x-api-key` ヘッダー） | 承認済み（Subscribed） | 1回 約0.6 MB（約5,400台分） | **動作確認済み**（キーは `.env`） |
+| E | メトロ 時間帯別乗降数（駅別・入場/出場） | 3, 4, 5 | ポータルの Download Now／承認メールのリンク | 承認済み | 未確認（1か月分の Excel） | 未ダウンロード。メールのリンクは 2024年2月分 |
+| F | メトロ OD（月次・年次） | 3, 5 | ポータルの Download | **承認制・未申請** | 未確認 | — |
+| G | メトロ GTFS Static（DMRC） | 3, 4, 5 | ポータルの Download | 不要（Open） | 小さい | 未ダウンロード |
+| H | メトロ 改札口の位置（DMRC） | 4 | ポータルの Download | 不要（Open） | 小さい | 未ダウンロード |
+| I | 道路網（OpenStreetMap） | 1, 4 | Geofabrik 等 | 不要 | デリー周辺で数百 MB | 未ダウンロード |
+
+※ 問題4の「対象メトロ駅リスト」、問題5の「車両・列車の定員」「メトロの路線・駅の並び」はブリーフ上「to be confirmed」で、まだ配布されていない。
+
+## 2. 各データの詳細
+
+### A. バス GPS（問題1の本体）
+- URL: `https://pub-091bd9e794bb4877b10b29e6df80f065.r2.dev/2026-10/delhi-dtc-bus-gtfs-rt-2026-10.7z`
+- 1日1つの SQLite（`bus_movements_YYYY_MM_DD.db`）×31日。1日あたり展開後 約4 GB。
+- テーブル `vehicle_feed`: `vehicle_id`, `lat`(TEXT), `lng`(TEXT), `speed`, `route_id`(REAL), `trip_id`, `timestamp`(UTC epoch, TEXT), `date`(IST), `time`(IST)
+- **DTC バスのみ**。インデックス無し。重複・欠損・GPS ノイズありの生データ（データ README より）。
+- 7z は non-solid なので **1日分ずつ取り出せる**。
+- チェックサム: `SHA256SUMS`（同じフォルダ）
+
+### B. バス電子乗車券（問題2の本体）
+- URL: `https://pub-091bd9e794bb4877b10b29e6df80f065.r2.dev/2026-10/October-Delhi.csv.zip`
+- 列: `passenger_count`, `amount`, `vehicle_number`（**約半分の行で空欄／NULL**）, `ticket_type_id`, `start_stop_name`, `end_stop_name`, `route`（例 `8UP`）, `created_at`（IST）, `is_ac`
+- 出典は ONDC の電子乗車券。**全バス乗車券の 3〜4% しか捕捉していない**（問題3ブリーフ）。
+- **降車停留所が停留所名で入っている**ので、降車の推定は不要。停留所名を GTFS の stop に名寄せする作業は必要。
+- 2026-11-15 の確認：2,559,899 行、10/1〜10/31 の31日分、乗客数の合計 2,753,606 人。`ticket_type_id` は全行 1。`vehicle_number` の欠損率 48.5%。路線 2,259 種類（`8UP`/`8ADOWN` のように方向付き）、乗車停留所名 7,148 種類。**乗車停留所名が GTFS の stop_name とそのまま一致するのは 71%**（残りは表記ゆれの名寄せが必要）。
+
+### C. バス GTFS Static
+- **2026-11-15 取得分は feed_version v32**（DTC＋DIMTS）：路線 2,574・停留所 6,862・便 80,357・stop_times 約274万行・shapes 約97万点。以前の v1（停留所 6,812・便 65,322）より新しい。ブリーフの「停留所約10,500・便約89,000」とはまだ合わない。calendar は service_id 1つ（毎日運行・2025〜2040）で、平日・休日の区別が無い。
+- 承認メール（個人 Gmail、迷惑メールフォルダ）のリンク: `https://dts-backend.transportstack.in/api/dataset/otd/download-file?agency=delhi-buses&category=static_gtfs&filename=delhi_buses_static_gtfs_v1.zip&datasetId=1`（ファイル名は v1。認証が要るかは未確認）
+- ポータル上の最終更新は 2026-06-23。
+- 以前落とした v1（停留所 6,812・路線 2,554・便 65,322）と、ブリーフの記載（停留所約10,500・路線約2,400・便約89,000）が合わない。**最新版を落とし直して件数を確認する**。
+
+### D. バス GTFS-RT（API）
+- エンドポイント（承認メール記載）: `GET https://dts-backend.transportstack.in/api/dataset/otd/get-file?agency=delhi-buses&category=realtime_gtfs&filename=VehiclePositions.pb`
+  - 手順書 PDF では `delhi.transportstack.in` になっているが、メールのほうを使う。
+- ヘッダー: `x-api-key: <キー>`
+- **API キーの場所：ポータル登録用の個人 Gmail の「API Access Approved: Delhi Buses: GTFS-RT feed」（2026-11-13、送信元 contact.delhitransportstack@gmail.com）。迷惑メールフォルダに入っていた。** 有効期限は 2036-11-10。ポータルのマイページには表示されない。
+- キーは `.env` に `DTS_API_KEY=...` と書く（`.env` はコミットされない）。確認は `python scripts/check_gtfs_rt.py`。
+- ブリーフでは「DTC とクラスターバスの位置が数秒ごとに更新」とあるが、カタログでは「現状クラスターバスのみ、DTC は今後追加」。
+- 2026-11-15 の確認では、1回の取得で **5,360台分**（約587 KB）が返った。`vehicle_id`・`route_id`・`trip_id`（例 `2432_17_59_4578`）・緯度経度・時刻が入っている。DTC がどこまで含まれるかは車両番号と GPS データの突き合わせで要確認。
+- 1回 約0.6 MB なので、10秒ごとに記録すると1日 約5 GB（圧縮なし）。記録するなら間隔を30秒〜1分にするか、Parquet に変換しながら保存する。
+- 過去分は配布されないので、ライブ部分を使うなら **自分たちで定期取得して記録する** 必要がある。
+
+### E. メトロ 時間帯別乗降数
+- 承認メールのリンク: `https://dts-backend.transportstack.in/api/dataset/otd/download-file?agency=dmrc&category=monthly_hourly_footfall&filename=stationwise_hourly_entry_exit_february_2024.xlsx`（2024年2月分）
+- このリンクに認証なしでアクセスすると **401** が返る。ポータルにログインしたブラウザから開くか、ポータルの「Download Now」から落とす。
+- どの月が選べるかはポータルで要確認。バスのデータ（2026年10月）と時期が合わない可能性が高い。
+- Phase 2（問題3・4・5）用なので急がない。
+
+### F. メトロ OD（月次・年次）
+- 問題3（OD 行列）・問題5（経路の割り当て）で使える可能性が高いが、**まだ申請していない**。承認制なので Phase 2 に進む前に申請しておく。
+
+## 3. 容量が大きいデータ（バス GPS）の扱い方
+
+このPCの状況: 空き容量 約135 GB、メモリ 32 GB、20 コア。7-Zip と DuckDB は未インストール（Python・pandas・polars はある）。
+
+**全部を展開すると 124 GB でディスクがほぼ埋まるので、全展開はしない。** 次の流れで処理する。
+
+1. `.7z`（16.1 GB）だけをダウンロードしてチェックサムを確認する（`curl -C - -O` で途中再開できるようにする）。
+2. 7z から **1日分ずつ** `.db`（約4 GB）を取り出す。
+3. その日の `.db` を DuckDB などで読み、型を直して（`lat`/`lng` を数値、`timestamp` を整数）、重複を落として **Parquet に変換** する。
+4. 変換できたら `.db` は削除して次の日へ。31日分を順に回す。
+5. 以降の分析は Parquet を DuckDB / polars で読む（必要な列・期間だけを読めるので 32 GB メモリで足りる）。
+
+- Parquet にすると数分の一〜十分の一程度になる見込み（**未検証の推定**。最初の1日分で実測する）。
+- 時間が無ければ、まず平日・休日を含む **1〜2週間分だけ** 変換して手法を作り、残りは検証用に後から足す。
+- ローカルで厳しければ、Google Cloud SDK が入っているので GCS＋BigQuery に載せる手もある（費用と利用規約を要確認）。
+- チームで共有するときは、生データではなく **変換済みの Parquet** を共有ドライブ等で渡す（利用規約上、チーム外には出さない）。
+
+## 4. やること
+
+- [x] 個人 Gmail で GTFS-RT の承認メールを探す（迷惑メールフォルダにあった）
+- [x] API キーを `.env` に `DTS_API_KEY=...` と書く → `scripts/check_gtfs_rt.py` で動作確認（2026-11-15 18:06 IST：HTTP 200、5,360台分、約587 KB）
+- [ ] 承認メール3通を「迷惑メールではない」にしておく（今後の連絡を見落とさないため）
+- [x] 電子乗車券（66 MB）をダウンロード → `data/raw/ticketing/`
+- [x] バス GTFS Static をダウンロードし、件数を確認 → `data/raw/gtfs_static/`
+- [ ] バス GPS の .7z をダウンロード → 1日分だけ取り出して Parquet 変換を試し、容量と処理時間を実測
+- [ ] GTFS-RT を定期取得して記録する仕組みを作る（問題1を選ぶ場合）
+- [ ] メトロ OD（月次・年次）を申請する（Phase 2 用）
+- [ ] メトロ乗降数で選べる月を確認する（Phase 2 用）
+- [ ] 7-Zip と DuckDB をインストールする
