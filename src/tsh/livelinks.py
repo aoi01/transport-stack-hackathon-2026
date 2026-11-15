@@ -34,6 +34,8 @@ class LiveLinks:
         self._t = 0.0
         self.obs: dict = {}
         self.stats = {"points": 0, "link_obs": 0, "links": 0, "updated": None, "error": None}
+        self.raw = pd.DataFrame(columns=["route_id", "a", "b", "t", "s", "m"])
+        self.passages: dict = {}
         pat = C.patterns()[["route_id", "seq", "stop_id", "stop_lat", "stop_lon", "cum_m"]].copy()
         self.pat = pat
 
@@ -79,7 +81,7 @@ class LiveLinks:
                             JOIN pat b ON b.route_id = pr.route_id AND b.seq = pr.seq2
                     WHERE seq2 IS NOT NULL AND seq2 - pr.seq <= 5
                 )
-                SELECT l.stop_id AS a, l2.stop_id AS b,
+                SELECT gg.route_id, l.stop_id AS a, l2.stop_id AS b,
                        gg.ts + gg.dt_s * (l.cum_m - gg.c0) / gg.d_m AS t,
                        gg.dt_s * (l2.cum_m - l.cum_m) / gg.d_m AS s,
                        l2.cum_m - l.cum_m AS m
@@ -88,6 +90,21 @@ class LiveLinks:
                 WHERE gg.d_m > 0 AND gg.dt_s > 0 AND gg.d_m / gg.dt_s * 3.6 BETWEEN 1 AND 80 AND l2.cum_m > l.cum_m
             """).df()
             pts = con.execute(f"SELECT count(*) FROM read_parquet({globs}) WHERE ts >= {since}").fetchone()[0]
+            # 停留所の通過（待ち時間の「前のバスからの経過時間」に使う）
+            pas = con.execute(f"""
+                WITH g AS (
+                    SELECT DISTINCT vehicle_id, trip_id, route_id, ts, lat, lng
+                    FROM read_parquet({globs}) WHERE ts >= {since}
+                ), cand AS (
+                    SELECT g.vehicle_id, g.trip_id, g.route_id, g.ts, p.seq,
+                           sqrt(pow((g.lat - p.stop_lat) * {C.M_PER_DEG_LAT}, 2) + pow((g.lng - p.stop_lon) * {C.M_PER_DEG_LNG}, 2)) AS d
+                    FROM g JOIN pat p ON g.route_id = p.route_id
+                     AND g.lat BETWEEN p.stop_lat - {dlat} AND p.stop_lat + {dlat}
+                     AND g.lng BETWEEN p.stop_lon - {dlng} AND p.stop_lon + {dlng}
+                )
+                SELECT vehicle_id, trip_id, route_id, seq, arg_min(ts, d) AS ts
+                FROM cand WHERE d <= {RADIUS_M} GROUP BY ALL
+            """).df()
         except Exception as e:  # noqa: BLE001
             self.stats["error"] = f"読み込み失敗: {e}"
             return
@@ -99,8 +116,27 @@ class LiveLinks:
                 o = obs[(r.a, r.b)]
                 o[0].append(r.t); o[1].append(np.log(r.s / h))
         self.obs = {k: (np.array(v[0]), np.array(v[1])) for k, v in obs.items()}
+        self.raw = df            # 区間の実績（route_id, a, b, t, s, m）。区間全体のモデルの直近の特徴量に使う
+        pas["route_id"] = pas.route_id.astype(str)
+        self.passages = {k: g.sort_values("seq") for k, g in pas.groupby("route_id")}
         self.stats.update(points=int(pts), link_obs=int(len(df)), links=len(self.obs),
                           updated=datetime.now(IST).isoformat(timespec="seconds"), error=None)
+
+    def last_pass(self, route_id: str, i: int, cum: np.ndarray, now_epoch: float):
+        """路線の停留所 i を最後のバスが通った時刻（epoch 秒）。前後の検出から距離で補間。分からなければ None。"""
+        self.refresh()
+        g = self.passages.get(str(route_id))
+        if g is None:
+            return None
+        best = None
+        for _, t in g.groupby(["vehicle_id", "trip_id"]):
+            seqs = t.seq.to_numpy()
+            if seqs.min() > i or seqs.max() < i:
+                continue
+            ti = float(np.interp(cum[i], cum[seqs], t.ts.to_numpy().astype(float)))
+            if ti < now_epoch and (best is None or ti > best):
+                best = ti
+        return best
 
     def factor(self, route_id: str, i: int, j: int, now_epoch: float) -> tuple[float, int]:
         """路線の seq i→j のリンクについて、直近 30 分の補正係数と観測数。"""

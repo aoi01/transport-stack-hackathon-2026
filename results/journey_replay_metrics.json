@@ -1,0 +1,85 @@
+{
+ "pairs": 600,
+ "top_option_replayable": 264,
+ "top_option_accuracy": {
+  "model": {
+   "n": 264,
+   "MAE_min": 49.92,
+   "MAPE_%": 37.0,
+   "MedAPE_%": 35.5,
+   "within20%_%": 31.4,
+   "bias_min": -39.34,
+   "median_err_min": -18.68,
+   "actual_mean_min": 115.3,
+   "within_5min_%": 13.3,
+   "within_10min_%": 25.0,
+   "within_15min_%": 35.2
+  },
+  "timetable": {
+   "n": 242,
+   "MAE_min": 62.98,
+   "MAPE_%": 51.5,
+   "MedAPE_%": 43.0,
+   "within20%_%": 23.1,
+   "bias_min": -32.17,
+   "median_err_min": -23.93,
+   "actual_mean_min": 114.2,
+   "within_5min_%": 6.8,
+   "within_10min_%": 16.3,
+   "within_15min_%": 23.5
+  }
+ },
+ "by_transfers": {
+  "乗換0回": {
+   "model": {
+    "n": 128,
+    "MAE_min": 38.63,
+    "MAPE_%": 37.6,
+    "MedAPE_%": 35.5,
+    "within20%_%": 32.8,
+    "bias_min": -27.87,
+    "median_err_min": -7.89,
+    "actual_mean_min": 89.3
+   },
+   "timetable": {
+    "n": 120,
+    "MAE_min": 47.82,
+    "MAPE_%": 50.7,
+    "MedAPE_%": 40.5,
+    "within20%_%": 26.7,
+    "bias_min": -25.99,
+    "median_err_min": -15.72,
+    "actual_mean_min": 88.5
+   }
+  },
+  "乗換1回": {
+   "model": {
+    "n": 136,
+    "MAE_min": 60.56,
+    "MAPE_%": 36.3,
+    "MedAPE_%": 35.9,
+    "within20%_%": 30.1,
+    "bias_min": -50.13,
+    "median_err_min": -35.77,
+    "actual_mean_min": 139.8
+   },
+   "timetable": {
+    "n": 122,
+    "MAE_min": 77.9,
+    "MAPE_%": 52.3,
+    "MedAPE_%": 45.0,
+    "within20%_%": 19.7,
+    "bias_min": -38.24,
+    "median_err_min": -34.23,
+    "actual_mean_min": 139.5
+   }
+  }
+ },
+ "route_choice": {
+  "pairs_with_2plus_replayable": 207,
+  "model_picked_actual_fastest_%": 62.3,
+  "timetable_picked_actual_fastest_%": 61.8,
+  "model_mean_regret_min": 13.87,
+  "timetable_mean_regret_min": 15.54
+ }
+}

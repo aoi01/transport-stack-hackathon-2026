@@ -1,0 +1,132 @@
+{
+ "trip_segments": 44255988,
+ "share_y_pos_%": 17.1,
+ "tuning": {
+  "M1 便ベースのマス平均": {
+   "poisson_dev": 1.0117,
+   "MAE": 0.339,
+   "corr_trip_seg": 0.4925
+  },
+  "M2 縮小 α=1": {
+   "poisson_dev": 0.8077,
+   "MAE": 0.339,
+   "corr_trip_seg": 0.4968
+  },
+  "M2 縮小 α=3": {
+   "poisson_dev": 0.7891,
+   "MAE": 0.3393,
+   "corr_trip_seg": 0.4992
+  },
+  "M2 縮小 α=10": {
+   "poisson_dev": 0.7762,
+   "MAE": 0.3405,
+   "corr_trip_seg": 0.5
+  },
+  "M2 縮小 α=30": {
+   "poisson_dev": 0.774,
+   "MAE": 0.3426,
+   "corr_trip_seg": 0.4966
+  },
+  "M3 縮小＋前後区間 α=1": {
+   "poisson_dev": 0.8181,
+   "MAE": 0.339,
+   "corr_trip_seg": 0.4954
+  },
+  "M3 縮小＋前後区間 α=3": {
+   "poisson_dev": 0.7988,
+   "MAE": 0.3391,
+   "corr_trip_seg": 0.4975
+  },
+  "M3 縮小＋前後区間 α=10": {
+   "poisson_dev": 0.7835,
+   "MAE": 0.3396,
+   "corr_trip_seg": 0.4997
+  },
+  "M3 縮小＋前後区間 α=30": {
+   "poisson_dev": 0.7762,
+   "MAE": 0.3406,
+   "corr_trip_seg": 0.5004
+  }
+ },
+ "chosen_on_tuning": "M2 縮小 α=30",
+ "report": {
+  "M1 便ベースのマス平均": {
+   "poisson_dev": 0.9002,
+   "MAE": 0.3325,
+   "corr_trip_seg": 0.5317
+  },
+  "M2 縮小 α=1": {
+   "poisson_dev": 0.7595,
+   "MAE": 0.3327,
+   "corr_trip_seg": 0.5347
+  },
+  "M2 縮小 α=3": {
+   "poisson_dev": 0.7455,
+   "MAE": 0.3331,
+   "corr_trip_seg": 0.5366
+  },
+  "M2 縮小 α=10": {
+   "poisson_dev": 0.7353,
+   "MAE": 0.3343,
+   "corr_trip_seg": 0.5373
+  },
+  "M2 縮小 α=30": {
+   "poisson_dev": 0.7336,
+   "MAE": 0.3364,
+   "corr_trip_seg": 0.5343
+  },
+  "M3 縮小＋前後区間 α=1": {
+   "poisson_dev": 0.7669,
+   "MAE": 0.3326,
+   "corr_trip_seg": 0.5338
+  },
+  "M3 縮小＋前後区間 α=3": {
+   "poisson_dev": 0.7525,
+   "MAE": 0.3328,
+   "corr_trip_seg": 0.5353
+  },
+  "M3 縮小＋前後区間 α=10": {
+   "poisson_dev": 0.7405,
+   "MAE": 0.3334,
+   "corr_trip_seg": 0.5369
+  },
+  "M3 縮小＋前後区間 α=30": {
+   "poisson_dev": 0.7345,
+   "MAE": 0.3344,
+   "corr_trip_seg": 0.5374
+  },
+  "M0 今の方式": {
+   "poisson_dev": 0.7757,
+   "MAE": 0.3477,
+   "corr_trip_seg": 0.4768
+  }
+ },
+ "between_trip_cv_of_true_load_overall": 1.185,
+ "between_trip_cv_by_mean_bin": {
+  "(0.00242, 0.069]": {
+   "cells": 95040.0,
+   "mean_y": 0.041,
+   "cv_true_load": 1.338
+  },
+  "(0.069, 0.143]": {
+   "cells": 97500.0,
+   "mean_y": 0.105,
+   "cv_true_load": 1.351
+  },
+  "(0.143, 0.253]": {
+   "cells": 89839.0,
+   "mean_y": 0.195,
+   "cv_true_load": 1.155
+  },
+  "(0.253, 0.493]": {
+   "cells": 94100.0,
+   "mean_y": 0.355,
+   "cv_true_load": 0.959
+  },
+  "(0.493, 7.838]": {
+   "cells": 94114.0,
+   "mean_y": 1.022,
+   "cv_true_load": 0.781
+  }
+ }
+}

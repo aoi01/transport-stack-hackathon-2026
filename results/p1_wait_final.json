@@ -1,0 +1,154 @@
+{
+ "wait": {
+  "過去の実績": {
+   "n": 3000,
+   "MAE_min": 23.16,
+   "MAPE_%": 277.5,
+   "MedAPE_%": 58.7,
+   "within20%_%": 15.9,
+   "bias_min": -3.72,
+   "median_err_min": 0.44,
+   "actual_mean_min": 35.0
+  },
+  "リアルタイム（手前のバス）": {
+   "n": 3000,
+   "MAE_min": 17.44,
+   "MAPE_%": 87.0,
+   "MedAPE_%": 36.6,
+   "within20%_%": 31.6,
+   "bias_min": -9.75,
+   "median_err_min": -2.57,
+   "actual_mean_min": 35.0
+  },
+  "前のバスからの経過で条件づけ": {
+   "n": 3000,
+   "MAE_min": 23.89,
+   "MAPE_%": 309.5,
+   "MedAPE_%": 60.2,
+   "within20%_%": 17.6,
+   "bias_min": -1.2,
+   "median_err_min": 2.0,
+   "actual_mean_min": 35.0
+  },
+  "リアルタイム→経過": {
+   "n": 3000,
+   "MAE_min": 17.4,
+   "MAPE_%": 92.5,
+   "MedAPE_%": 35.8,
+   "within20%_%": 33.3,
+   "bias_min": -8.22,
+   "median_err_min": -1.91,
+   "actual_mean_min": 35.0
+  },
+  "リアルタイム＋折り返し（最小）": {
+   "n": 3000,
+   "MAE_min": 19.0,
+   "MAPE_%": 124.7,
+   "MedAPE_%": 34.5,
+   "within20%_%": 34.3,
+   "bias_min": -1.22,
+   "median_err_min": -0.8,
+   "actual_mean_min": 35.0
+  },
+  "確率的な組み合わせ（失敗）": {
+   "n": 3000,
+   "MAE_min": 20.25,
+   "MAPE_%": 74.7,
+   "MedAPE_%": 47.4,
+   "within20%_%": 23.2,
+   "bias_min": -17.05,
+   "median_err_min": -7.78,
+   "actual_mean_min": 35.0
+  },
+  "リアルタイム→（折り返しと経過の平均）→経過【採用】": {
+   "n": 3000,
+   "MAE_min": 16.78,
+   "MAPE_%": 106.7,
+   "MedAPE_%": 33.3,
+   "within20%_%": 34.8,
+   "bias_min": -4.61,
+   "median_err_min": -1.09,
+   "actual_mean_min": 35.0
+  }
+ },
+ "door_total": {
+  "過去の実績": {
+   "n": 2060,
+   "MAE_min": 24.65,
+   "MAPE_%": 46.8,
+   "MedAPE_%": 33.9,
+   "within20%_%": 30.1,
+   "bias_min": -7.9,
+   "median_err_min": -2.96,
+   "actual_mean_min": 61.8
+  },
+  "リアルタイム（手前のバス）": {
+   "n": 2060,
+   "MAE_min": 21.0,
+   "MAPE_%": 31.8,
+   "MedAPE_%": 24.9,
+   "within20%_%": 42.0,
+   "bias_min": -13.8,
+   "median_err_min": -7.18,
+   "actual_mean_min": 61.8
+  },
+  "前のバスからの経過で条件づけ": {
+   "n": 2060,
+   "MAE_min": 25.02,
+   "MAPE_%": 49.5,
+   "MedAPE_%": 33.8,
+   "within20%_%": 32.2,
+   "bias_min": -5.32,
+   "median_err_min": -1.71,
+   "actual_mean_min": 61.8
+  },
+  "リアルタイム→経過": {
+   "n": 2060,
+   "MAE_min": 20.87,
+   "MAPE_%": 32.5,
+   "MedAPE_%": 24.2,
+   "within20%_%": 43.6,
+   "bias_min": -12.13,
+   "median_err_min": -5.92,
+   "actual_mean_min": 61.8
+  },
+  "リアルタイム＋折り返し（最小）": {
+   "n": 2060,
+   "MAE_min": 22.62,
+   "MAPE_%": 39.0,
+   "MedAPE_%": 24.6,
+   "within20%_%": 42.9,
+   "bias_min": -5.02,
+   "median_err_min": -3.74,
+   "actual_mean_min": 61.8
+  },
+  "確率的な組み合わせ（失敗）": {
+   "n": 2060,
+   "MAE_min": 24.26,
+   "MAPE_%": 33.9,
+   "MedAPE_%": 29.7,
+   "within20%_%": 34.4,
+   "bias_min": -21.12,
+   "median_err_min": -12.62,
+   "actual_mean_min": 61.8
+  },
+  "リアルタイム→（折り返しと経過の平均）→経過【採用】": {
+   "n": 2060,
+   "MAE_min": 20.31,
+   "MAPE_%": 33.8,
+   "MedAPE_%": 23.5,
+   "within20%_%": 44.4,
+   "bias_min": -8.41,
+   "median_err_min": -4.49,
+   "actual_mean_min": 61.8
+  }
+ },
+ "chaining": {
+  "pairs": 2062,
+  "routes_with_feeder": 1609,
+  "layover_median_min": 10.2,
+  "share_next_is_paired_%": 75.6
+ },
+ "share_upstream_visible_%": 46.7,
+ "share_upstream_or_chain_%": 82.0
+}

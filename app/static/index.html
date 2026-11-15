@@ -79,11 +79,19 @@ function legHtml(l){
   if (l.mode==='walk') return `<div class="leg">🚶 徒歩 ${l.minutes}分（${l.meters}m）${l.to_stop? '→ '+l.to_stop : '→ 目的地'}</div>`;
   const c = l.crowding;
   const conf = c.confidence ? `信頼度:${c.confidence}` : '';
-  const load = c.load!=null ? `約${c.load}人（90%区間 ${c.load_90ci[0]}–${c.load_90ci[1]}）` : '';
+  let load = '';
+  if (c.load != null && c.load_90ci) load = `約${c.load}人（90%区間 ${c.load_90ci[0]}–${c.load_90ci[1]}）`;
+  else if (c.load != null && c.load_range_assumptions) {
+    const [lo, hi] = c.load_range_assumptions;
+    load = lo === hi ? `平均 約${c.load}人（定員から上限を決めた路線）` : `平均 約${c.load}人（前提の幅 ${lo}–${hi}）`;
+  }
+  const prob = c.prob ? `座れる ${Math.round(c.prob['座れる']*100)}%・立つ ${Math.round(c.prob['立つ']*100)}%・混雑 ${Math.round(c.prob['混雑']*100)}%` : '';
+  const p85 = l.ride_min_p85 ? `・余裕を見ると ${l.ride_min_p85}分` : '';
   return `<div class="leg">🚌 <b>${l.route}</b> ${l.board.stop} → ${l.alight.stop}（${l.stops}停留所）<br>
-    待ち ${l.wait_min}分<span class="muted">（${l.wait_source}）</span>・乗車 ${l.ride_min}分
+    待ち ${l.wait_min}分<span class="muted">（${l.wait_source}）</span>・乗車 ${l.ride_min}分<span class="muted">${p85}</span>
     <span class="muted">（14時なら ${l.ride_min_at_14h}分・時刻表 ${l.ride_min_timetable ?? '-'}分）</span><br>
-    <span class="badge b-${c.level}">${c.level}</span> <span class="muted">${load} ${conf}</span></div>`;
+    <span class="badge b-${c.level}">${c.level}</span> <span class="muted">${prob}</span><br>
+    <span class="muted">${load} ${conf}</span></div>`;
 }
 async function go(){
   setMarkers();
@@ -94,7 +102,7 @@ async function go(){
     if (!r.ok) throw new Error(j.detail || r.status);
     if (!j.options.length) { out.innerHTML = '<p>経路が見つかりませんでした。</p>'; layer.clearLayers(); return; }
     out.innerHTML = j.options.map((o,k)=>`<div class="opt" data-k="${k}">
-      <div class="big">${o.total_min}分 <span class="muted">着 ${o.arrive}・乗換 ${o.transfers}回</span></div>
+      <div class="big">${o.total_min}分 <span class="muted">着 ${o.arrive}${o.arrive_safe ? '（余裕を見ると ' + o.arrive_safe + '）' : ''}・乗換 ${o.transfers}回</span></div>
       <div class="muted">徒歩 ${o.walk_min}分・待ち ${o.wait_min}分・乗車 ${o.ride_min}分・体感 ${o.perceived_min}分
         <span class="badge b-${o.crowding_worst}">${o.crowding_worst}</span></div>
       ${o.legs.map(legHtml).join('')}</div>`).join('');

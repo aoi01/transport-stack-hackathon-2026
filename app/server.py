@@ -23,9 +23,12 @@ from fastapi import FastAPI, HTTPException, Query  # noqa: E402
 from fastapi.responses import FileResponse  # noqa: E402
 
 from tsh import common as C  # noqa: E402
+from tsh.crowding2 import CrowdingModel2  # noqa: E402
 from tsh.planner import Planner  # noqa: E402
 from tsh.livelinks import LiveLinks  # noqa: E402
 from tsh.realtime import LiveFeed  # noqa: E402
+from tsh.segmodel import SegModel  # noqa: E402
+from tsh.waitmodel import WaitModel  # noqa: E402
 
 IST = timezone(timedelta(hours=5, minutes=30))
 app = FastAPI(title="Delhi bus journey planner (Transport Stack Hackathon 2026)",
@@ -33,6 +36,15 @@ app = FastAPI(title="Delhi bus journey planner (Transport Stack Hackathon 2026)"
 planner = Planner("all")
 live = LiveFeed(planner)
 live_links = LiveLinks(planner.tt)   # tsh.recorder が記録した GTFS-RT から直近 30 分の区間実績
+try:
+    planner.seg = SegModel()          # 乗る区間全体の LightGBM（中央値・85% 点）
+except Exception as e:  # noqa: BLE001  モデルが無ければ従来の方式で動かす
+    print("区間モデルを読み込めませんでした（従来の方式を使います）:", e)
+wait_model = WaitModel(planner.tt)    # 折り返し・前のバスからの経過を使う待ち時間
+try:
+    planner.cr = CrowdingModel2("all")  # 便ベース＋縮小推定、路線ごとの拡大係数、車種別の定員、混雑の確率
+except Exception as e:  # noqa: BLE001
+    print("改良版の混雑モデルを読み込めませんでした（従来の方式を使います）:", e)
 
 
 def _pt(s: str):
@@ -53,7 +65,7 @@ def journeys(from_: str = Query(..., alias="from", examples=["28.6676,77.2285"])
     o, d = _pt(from_), _pt(to)
     t = datetime.fromisoformat(depart) if depart else datetime.now(IST).replace(tzinfo=None, microsecond=0)
     res = planner.plan(o[0], o[1], d[0], d[1], t, sort=sort, max_options=n,
-                       live_wait=live.wait_fn() if realtime else None,
+                       live_wait=live.wait_fn(wait_model=wait_model, live_links=live_links) if realtime else None,
                        live_links=live_links if realtime else None)
     res["realtime_feed"] = {"time": live.feed_time.isoformat() if live.feed_time else None, "error": live.error}
     res["live_links"] = live_links.stats

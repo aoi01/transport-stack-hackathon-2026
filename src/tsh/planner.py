@@ -159,7 +159,7 @@ class Planner:
         dtp = C.day_type(depart.date())
         walk_ms = [x for x in st if not isinstance(x, tuple)]
         buses = [x for x in st if isinstance(x, tuple)]
-        total_wait = total_ride = total_walk = perceived = 0.0
+        total_wait = total_ride = total_walk = perceived = buffer_s = 0.0
         # 最初の徒歩
         w0 = self.walk_s(walk_ms[0])
         legs.append({"mode": "walk", "to_stop": self.stop_name.get(buses[0][4]), "minutes": round(w0 / 60, 1),
@@ -174,22 +174,38 @@ class Planner:
             wait = None
             src = "過去の実績"
             if n == 0 and live_wait is not None:
-                wait = live_wait(rid, i, t)
-                if wait is not None:
-                    src = "リアルタイム"
+                lw = live_wait(rid, i, t)
+                if isinstance(lw, tuple):
+                    wait, src = lw
+                elif lw is not None:
+                    wait, src = lw, "リアルタイム"
             if wait is None:
                 wait = self.tt.wait_sec(rid, t)
             t_board = t + timedelta(seconds=wait)
-            ride = self.tt.ride_sec(rid, i, j, t_board)
-            # 直前のバスによる補正（記録した GTFS-RT の直近 30 分の実績）。出発が今から 15 分以内のときだけ
-            corr, corr_n = 1.0, 0
             ll = getattr(self, "_live_links", None)
-            if ll is not None:
-                now = datetime.now(IST).replace(tzinfo=None)
-                if abs((t_board - now).total_seconds()) <= 15 * 60:
+            now = datetime.now(IST).replace(tzinfo=None)
+            # 直近の実績を使うのは、乗車が今から 30 分以内のとき（それより先は過去の実績だけ）
+            near_now = -15 * 60 <= (t_board - now).total_seconds() <= 30 * 60
+            seg = getattr(self, "seg", None)
+            corr, corr_n = 1.0, 0
+            if seg is not None:
+                # 乗る区間全体の LightGBM（中央値と 85% 点）。直近の実績が使えるときは「直近あり」のモデル
+                raw = ll.raw if (ll is not None and near_now) else None
+                if raw is not None:
+                    ll.refresh()
+                    raw = ll.raw
+                pr = seg.predict(rid, i, j, t_board, raw, pd.Timestamp(now, tz=C.TZ).timestamp() if near_now else None)
+                ride, ride_p85, ride_model = pr["median_s"], pr["q85_s"], f"区間モデル（{pr['mode']}）"
+                corr_n = pr["recent_obs"]
+                quiet = seg.predict(rid, i, j, t_board.replace(hour=14, minute=0))["median_s"]
+            else:
+                ride = self.tt.ride_sec(rid, i, j, t_board)
+                # 直前のバスによる補正（記録した GTFS-RT の直近 30 分の実績）。出発が今から 15 分以内のときだけ
+                if ll is not None and near_now:
                     corr, corr_n = ll.factor(rid, i, j, pd.Timestamp(now, tz=C.TZ).timestamp())
                     ride *= corr
-            quiet = self.tt.ride_sec(rid, i, j, t_board.replace(hour=14, minute=0))
+                ride_p85, ride_model = None, "区間ごとの中央値の合計"
+                quiet = self.tt.ride_sec(rid, i, j, t_board.replace(hour=14, minute=0))
             sched = self.tt.sched_ride_sec(rid, i, j, t_board)
             crowd = self.cr.leg(rid, i, j, dtp, t_board.hour)
             legs.append({
@@ -200,6 +216,8 @@ class Planner:
                 "stops": j - i,
                 "wait_min": round(wait / 60, 1), "wait_source": src,
                 "ride_min": round(ride / 60, 1),
+                "ride_min_p85": round(ride_p85 / 60, 1) if ride_p85 else None,
+                "ride_model": ride_model,
                 "ride_live_factor": round(corr, 3), "ride_live_obs": corr_n,
                 "ride_min_at_14h": round(quiet / 60, 1),
                 "ride_min_timetable": round(sched / 60, 1) if sched else None,
@@ -208,7 +226,12 @@ class Planner:
                 "path": self.seq_xy[rid][i:j + 1].round(6).tolist(),
             })
             total_wait += wait; total_ride += ride
-            perceived += wait * 1.5 + ride * CROWD_WEIGHT.get(crowd["level"], 1.2)
+            buffer_s += (ride_p85 - ride) if ride_p85 else 0.0
+            if "prob" in crowd:   # 混雑の確率があれば、重みの期待値（座れる 1.0 / 立つ 1.5 / 混雑 2.3）を使う
+                w_crowd = sum(p * CROWD_WEIGHT[k] for k, p in crowd["prob"].items())
+            else:
+                w_crowd = CROWD_WEIGHT.get(crowd["level"], 1.2)
+            perceived += wait * 1.5 + ride * w_crowd
             t = t_board + timedelta(seconds=ride)
         wl = self.walk_s(walk_ms[-1])
         legs.append({"mode": "walk", "to": "目的地", "minutes": round(wl / 60, 1), "meters": round(walk_ms[-1])})
@@ -219,6 +242,8 @@ class Planner:
                     key=lambda x: ["座れる", "立つ", "混雑", "不明"].index(x) if x in ["座れる", "立つ", "混雑"] else -1)
         return {
             "total_min": round(total / 60, 1), "arrive": t.strftime("%H:%M"),
+            # 余裕を見た到着（乗車時間を 85% 点で見た場合。待ち時間のばらつきは含まない）
+            "arrive_safe": (t + timedelta(seconds=buffer_s)).strftime("%H:%M") if buffer_s else None,
             "walk_min": round(total_walk / 60, 1), "wait_min": round(total_wait / 60, 1),
             "ride_min": round(total_ride / 60, 1), "transfers": len(buses) - 1,
             "crowding_worst": worst, "perceived_min": round(perceived / 60, 1),

@@ -12,10 +12,13 @@ Process, methods and validation results: [`docs/phase1_prototype.md`](docs/phase
 
 | | Held-out week (Oct 25–31) result |
 |---|---|
-| P1 in-vehicle time | median abs. error **11.5%** (GTFS timetable 25.9%); **10.4%** with LightGBM + recent preceding-bus data (section 10) |
-| P1 door-to-door incl. wait | 24.9% with live GPS (15.9% when the next bus is visible), 36.5% timetable |
-| P2 crowding | train→test correlation **0.83** for high-confidence cells, crowding level agreement 74–80%, within one level 97% |
-| Planner | 100% of 200 random OD pairs answered, 0.13 s median |
+| P1 in-vehicle time | median abs. error **10.0%** (ensemble of segment- and link-level LightGBM with recent preceding-bus data); GTFS timetable 25.9%. 85th-percentile "safe" time is calibrated (85.1% of rides arrive within it) |
+| P1 wait / door-to-door | wait 33.3%, door-to-door 23.5% with live positions + opposite-direction trip chaining (timetable 36.5%) |
+| P1 journey replay (600 OD pairs, planning ahead) | top option median error 35.5% vs timetable 43.0%; picked the actually fastest option 62% of the time |
+| P2 crowding | trip-level holdout: Poisson deviance −5.4% and correlation 0.48→0.53 with trip-based shrinkage; per-route expansion bounded by vehicle capacity; seat/standing/crowded probabilities |
+| Planner | answers in ~1–4 s |
+
+Process, methods and all experiments (including what did not work): [`docs/phase1_prototype.md`](docs/phase1_prototype.md) sections 10–12（日本語）. Literature review: [`reports/`](reports/).
 
 ### Run
 

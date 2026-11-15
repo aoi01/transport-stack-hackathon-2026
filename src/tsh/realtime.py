@@ -69,16 +69,15 @@ class LiveFeed:
         self.feed_time = datetime.fromtimestamp(feed.header.timestamp, IST)
         self.error = None
 
-    def wait_fn(self, now_tol_min: int = 15):
-        """planner.plan(live_wait=...) に渡す関数。出発時刻が今から ±15 分以内のときだけ使う。"""
+    def wait_fn(self, now_tol_min: int = 15, wait_model=None, live_links=None):
+        """planner.plan(live_wait=...) に渡す関数。出発時刻が今から ±15 分以内のときだけ使う。
+        返り値: (待ち秒, 出どころ) または None（過去の実績を使う）。wait_model があれば折り返しと経過時間も使う。"""
         def f(route_id: str, i: int, t: datetime):
             now = datetime.now(IST).replace(tzinfo=None)
             if abs((t - now).total_seconds()) > now_tol_min * 60:
                 return None
             self.refresh()
-            veh = self._by_route.get(str(route_id))
-            if not veh:
-                return None
+            veh = self._by_route.get(str(route_id)) or []
             xy = self.p.seq_xy[route_id]
             best = None
             for lat, lng, ts in veh:
@@ -91,5 +90,8 @@ class LiveFeed:
                 w = (eta - t).total_seconds()
                 if w >= -60 and (best is None or w < best):
                     best = max(w, 0.0)
-            return best
+            if wait_model is None:
+                return (best, "リアルタイム（手前を走るバス）") if best is not None else None
+            w, src = wait_model.wait(route_id, i, t, best, self._by_route, live_links)
+            return (w, src) if w is not None else None
         return f
