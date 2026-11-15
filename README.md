@@ -7,7 +7,23 @@ Open-source tools for Delhi buses and metro, built for the
 
 ## Problem
 
-Phase 1: Problem 2 — Crowdedness-aware journey planner (tentative)
+Phase 1: we built working prototypes for **both** Problem 1 (bus travel-time planner from observed GPS) and Problem 2 (crowdedness-aware planner from ticket data), sharing one journey-planner API.
+Process, methods and validation results: [`docs/phase1_prototype.md`](docs/phase1_prototype.md)（日本語）.
+
+| | Held-out week (Oct 25–31) result |
+|---|---|
+| P1 in-vehicle time | median abs. error **11.5%** (GTFS timetable 25.9%) |
+| P1 door-to-door incl. wait | 24.9% with live GPS (15.9% when the next bus is visible), 36.5% timetable |
+| P2 crowding | train→test correlation **0.83** for high-confidence cells, crowding level agreement 74–80%, within one level 97% |
+| Planner | 100% of 200 random OD pairs answered, 0.13 s median |
+
+### Run
+
+```bash
+pip install -r requirements.txt
+# build data/models: see docs/phase1_prototype.md (section 1)
+python -m uvicorn app.server:app --app-dir . --port 8000   # http://localhost:8000 , API docs at /docs
+```
 
 ## Data
 

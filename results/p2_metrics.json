@@ -1,0 +1,104 @@
+{
+ "matching": {
+  "tickets": 2559899,
+  "route_matched_%": 98.2,
+  "stops_matched_%": 79.2,
+  "by_method_%": {
+   "exact": 70.2,
+   "fuzzy": 22.9,
+   "nearby": 6.9
+  },
+  "capped_cells_%": 0.95,
+  "confidence_cells_%": {
+   "低": 67.3,
+   "中": 20.7,
+   "高": 12.0
+  },
+  "level_cells_%": {
+   "座れる": 88.6,
+   "立つ": 7.7,
+   "混雑": 3.7
+  }
+ },
+ "peaks": {
+  "weekday_peak_hour": 8,
+  "weekday_am_peak(8-10)": 21.3,
+  "weekday_midday(12-15)": 8.0,
+  "weekday_pm_peak(17-20)": 18.8,
+  "weekend_am(8-10)": 14.8,
+  "weekend_pm(17-20)": 12.0
+ },
+ "stability_train_vs_test": {
+  "高": {
+   "cells": 154021,
+   "pearson_r": 0.829,
+   "spearman_r": 0.845,
+   "MAE_people": 10.8,
+   "median_abs_rel_err_%": 24.9,
+   "level_agree_%": 74.2,
+   "level_within1_%": 97.8
+  },
+  "中": {
+   "cells": 134001,
+   "pearson_r": 0.725,
+   "spearman_r": 0.792,
+   "MAE_people": 10.3,
+   "median_abs_rel_err_%": 33.3,
+   "level_agree_%": 79.6,
+   "level_within1_%": 96.9
+  },
+  "低": {
+   "cells": 32104,
+   "pearson_r": 0.631,
+   "spearman_r": 0.72,
+   "MAE_people": 20.0,
+   "median_abs_rel_err_%": 64.3,
+   "level_agree_%": 69.6,
+   "level_within1_%": 90.5
+  },
+  "全体": {
+   "cells": 320126,
+   "pearson_r": 0.771,
+   "spearman_r": 0.772,
+   "MAE_people": 11.5,
+   "median_abs_rel_err_%": 31.6,
+   "level_agree_%": 76.0,
+   "level_within1_%": 96.7
+  }
+ },
+ "ridership": {
+  "e_ticket_pax_per_day": 88826,
+  "expanded_riders_per_day": 2537885,
+  "official_riders_per_day": 4141000,
+  "ratio_expanded_to_official": 0.61,
+  "implied_e_ticket_share_%": 2.15
+ },
+ "gps_check": {
+  "tickets_checked": 187738,
+  "share_with_gps_within_2min_%": 93.9,
+  "exact": {
+   "n": 133917,
+   "median_m": 206,
+   "within_300m_%": 64.1,
+   "within_1km_%": 94.7
+  },
+  "fuzzy": {
+   "n": 41378,
+   "median_m": 224,
+   "within_300m_%": 60.5,
+   "within_1km_%": 91.8
+  },
+  "nearby": {
+   "n": 12443,
+   "median_m": 238,
+   "within_300m_%": 59.0,
+   "within_1km_%": 92.4
+  },
+  "全体": {
+   "n": 187738,
+   "median_m": 212,
+   "within_300m_%": 62.9,
+   "within_1km_%": 93.9
+  }
+ }
+}

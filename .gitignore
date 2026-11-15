@@ -5,3 +5,6 @@ __pycache__/
 .venv/
 .env
 *.ipynb_checkpoints
+# 検証用のサンプル（元データ由来の行単位データなのでコミットしない）
+results/*_samples.csv
+results/*.log

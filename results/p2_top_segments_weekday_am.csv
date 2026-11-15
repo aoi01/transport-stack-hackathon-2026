@@ -1,0 +1,16 @@
+route_short_name,route_desc,stop_name,hr,load,n_tickets,level
+118EXTDOWN,Mayur Vihar Phase III (T) Paper Market to Mori Gate Terminal,Ganesh Nagar,10,100.0,242,混雑
+124DOWN,Mukhmel Pur to Old Delhi Railway Station (T),Alipur Blk.(BDO Office) / Budh Pur,8,100.0,67,混雑
+850DOWN,Jharoda Crossing / Najafgarh to Kendriya Terminal (Church Road) /  North Block Lane,Metal Forging,8,100.0,102,混雑
+144STLUP,BAWANA SEC-1 CLUSTER DEPOT to Singhu School (T),Sannoth Crossing / Ghoga Crossing,8,100.0,52,混雑
+874EDOWN,Badarpur Border(T) to Uttam Nagar Terminal (In Gate),Surajkund Crossing,9,100.0,103,混雑
+227ADOWN,Sabha Pur X-ing to Old Delhi Railway Station,Gamri Extn Pusta No.5,10,100.0,313,混雑
+849STLUP,Rani Khera Depot 2 to Qamruddin Nagar Terminal,Mundka School (Rani Khera Road),9,100.0,129,混雑
+241DOWN,Nand Nagari Terminal to Shivaji Stadium Terminal,Maujpur / Babarpur Ext Maujpur Crossing,10,100.0,63,混雑
+833ADOWN,Shyam Vihar pahse 1 to Karampura Terminal,Raja Garden,8,100.0,104,混雑
+258DOWN,CHAUHAN PATTI (TERMINAL) to Mori Gate Terminal,Sonia Vihar,8,100.0,512,混雑
+874EUP,Uttam Nagar Terminal (Out Gate) to Badarpur Border (T),Lajwanti Garden,8,100.0,164,混雑
+822DOWN,IssaPur D B Temple to Tilak Nagar Terminal,Mitraon Village,8,100.0,297,混雑
+310UP,Inder Puri JJ Colony to Jheel Terminal,Mandir Marg / Balmiki Mandir,9,100.0,37,混雑
+114CDOWN,Qutub Garh Village (T) to Azadpur Terminal,Rohini Sec 24/25 Crossing / Dera Satguru Sewaram Sahai,8,100.0,207,混雑
+819DOWN,Pandwala Kalan (T) to Tilak Nagar Terminal,Police Station Najafgarh,8,100.0,54,混雑

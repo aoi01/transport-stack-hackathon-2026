@@ -1,0 +1,10 @@
+{
+ "pairs": 200,
+ "found_%": 100.0,
+ "median_total_min": 75.6,
+ "direct_%": 35.5,
+ "crowding_known_on_all_legs_%": 81.5,
+ "search_sec_median": 0.13,
+ "search_sec_p90": 0.23,
+ "kmh_door_to_door_median": 7.6
+}
