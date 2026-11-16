@@ -12,6 +12,7 @@
 
 リンク
 - 課題ページ: https://delhi.transportstack.in/hackathon/
+- 問題1・2の詳しい要項（原文、2026-11-16 取得）: [`briefs/problem1.md`](briefs/problem1.md)・[`briefs/problem2.md`](briefs/problem2.md)
 - 登録: https://whereuelevate.com/drills/transport-stack-hackathon-2026
 - データ: https://delhi.transportstack.in/data-services
 - 問い合わせ（課題・データ）: csm@iiitd.ac.in
