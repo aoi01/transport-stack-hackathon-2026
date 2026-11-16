@@ -1,61 +1,61 @@
 {
  "factors": {
   "e_ticket_pax_per_day": 88826,
-  "matched_pax_per_day": 70393,
-  "match_rate": 0.792,
-  "expansion_central": 58.0,
-  "expansion_low": 47.1,
-  "expansion_high": 85.8,
+  "matched_pax_per_day": 81181,
+  "match_rate": 0.914,
+  "expansion_central": 50.3,
+  "expansion_low": 40.8,
+  "expansion_high": 74.4,
   "implied_paid_eticket_share_at_42pct_free_%": 3.75,
   "old_expansion": 28.6
  },
- "E_star": 85.8,
- "routes_capped": 1192,
- "routes": 1964,
- "expanded_total_vs_official": 0.727,
+ "E_star": 74.4,
+ "routes_capped": 1194,
+ "routes": 1971,
+ "expanded_total_vs_official": 0.763,
  "route_E_quantiles": {
-  "0.05": 18.6,
-  "0.25": 37.7,
-  "0.5": 63.7,
-  "0.75": 85.8,
-  "0.95": 85.8
+  "0.05": 17.6,
+  "0.25": 34.2,
+  "0.5": 57.7,
+  "0.75": 74.4,
+  "0.95": 74.4
  },
- "cv_overall": 1.185,
+ "cv_overall": 1.137,
  "cv_table(mean_y, cv)": [
   [
-   0.041,
-   1.338
+   0.046,
+   1.393
   ],
   [
-   0.105,
-   1.351
+   0.118,
+   1.305
   ],
   [
-   0.195,
-   1.155
+   0.223,
+   1.113
   ],
   [
-   0.355,
-   0.959
+   0.407,
+   0.926
   ],
   [
-   1.022,
-   0.781
+   1.112,
+   0.757
   ]
  ],
  "old_level_%": {
-  "座れる": 74.8,
-  "立つ": 15.3,
-  "混雑": 9.9
+  "座れる": 72.7,
+  "立つ": 16.5,
+  "混雑": 10.8
  },
  "new_level_of_mean_%": {
-  "座れる": 53.0,
-  "立つ": 27.1,
-  "混雑": 19.9
+  "座れる": 54.3,
+  "立つ": 26.4,
+  "混雑": 19.3
  },
- "new_mean_P_crowded_%": 23.3,
- "cells_mean_over_1.5x_capacity_%": 4.48,
- "weekday_am_peak_mean_load": 29.5,
- "weekday_midday_mean_load": 12.5,
- "weekday_pm_peak_mean_load": 23.6
+ "new_mean_P_crowded_%": 23.0,
+ "cells_mean_over_1.5x_capacity_%": 4.44,
+ "weekday_am_peak_mean_load": 30.7,
+ "weekday_midday_mean_load": 13.2,
+ "weekday_pm_peak_mean_load": 24.8
 }

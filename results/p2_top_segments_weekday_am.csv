@@ -1,16 +1,16 @@
 route_short_name,route_desc,stop_name,hr,load,n_tickets,level
-118EXTDOWN,Mayur Vihar Phase III (T) Paper Market to Mori Gate Terminal,Ganesh Nagar,10,100.0,242,混雑
-124DOWN,Mukhmel Pur to Old Delhi Railway Station (T),Alipur Blk.(BDO Office) / Budh Pur,8,100.0,67,混雑
-850DOWN,Jharoda Crossing / Najafgarh to Kendriya Terminal (Church Road) /  North Block Lane,Metal Forging,8,100.0,102,混雑
-144STLUP,BAWANA SEC-1 CLUSTER DEPOT to Singhu School (T),Sannoth Crossing / Ghoga Crossing,8,100.0,52,混雑
-874EDOWN,Badarpur Border(T) to Uttam Nagar Terminal (In Gate),Surajkund Crossing,9,100.0,103,混雑
-227ADOWN,Sabha Pur X-ing to Old Delhi Railway Station,Gamri Extn Pusta No.5,10,100.0,313,混雑
-849STLUP,Rani Khera Depot 2 to Qamruddin Nagar Terminal,Mundka School (Rani Khera Road),9,100.0,129,混雑
-241DOWN,Nand Nagari Terminal to Shivaji Stadium Terminal,Maujpur / Babarpur Ext Maujpur Crossing,10,100.0,63,混雑
-833ADOWN,Shyam Vihar pahse 1 to Karampura Terminal,Raja Garden,8,100.0,104,混雑
-258DOWN,CHAUHAN PATTI (TERMINAL) to Mori Gate Terminal,Sonia Vihar,8,100.0,512,混雑
-874EUP,Uttam Nagar Terminal (Out Gate) to Badarpur Border (T),Lajwanti Garden,8,100.0,164,混雑
-822DOWN,IssaPur D B Temple to Tilak Nagar Terminal,Mitraon Village,8,100.0,297,混雑
-310UP,Inder Puri JJ Colony to Jheel Terminal,Mandir Marg / Balmiki Mandir,9,100.0,37,混雑
-114CDOWN,Qutub Garh Village (T) to Azadpur Terminal,Rohini Sec 24/25 Crossing / Dera Satguru Sewaram Sahai,8,100.0,207,混雑
-819DOWN,Pandwala Kalan (T) to Tilak Nagar Terminal,Police Station Najafgarh,8,100.0,54,混雑
+858DOWN,Najafgarh Terminal to Ajmeri Gate / Kamla Market,Dhaula Kuan,9,100.0,47,混雑
+311AUP,Hamdard Nagar / Sangam Vihar to Anand Vihar ISBT Terminal,Rampuri Gali No 13,9,100.0,109,混雑
+780UP,New Delhi Railway Station Gate 2 to IGI Airport Terminal 2 (Air India Office),Centaur Hotel / New Custom House,9,100.0,35,混雑
+781DOWN,Dwarka Sec 16C/GGS IP University to New Delhi Railway Station Gate 2,Raksha Sampada Bhawan,10,100.0,38,混雑
+894UP,Okhla Village to Karampura Terminal,Taimur Nagar,8,100.0,306,混雑
+507DOWN,Okhla Extension (Abul Fazl Encalve) to ARSD College ( Dhaula Kuan),Sri Niwaspuri / PG DAV College,8,100.0,248,混雑
+129DOWN,Jhingola Village to Old Delhi Railway Station (T),Sanjay Gandhi Transport Nagar,10,100.0,44,混雑
+460DOWN,Badarpur Border (T) to Vivekanand Marg / Minto Road,Ali Village,8,100.0,476,混雑
+450DOWN,Jal Vihar Terminal to Anand Parvat Terminal,Sewa Nagar Flyover,9,100.0,177,混雑
+874EDOWN,Badarpur Border(T) to Uttam Nagar Terminal (In Gate),Prem Nagar (TUGLQABAD ROAD),8,100.0,210,混雑
+463DOWN,Mehrauli Terminal to Okhla Extension (Abul Fazl Encalve),Govindpuri Ext Gali No 16,8,100.0,220,混雑
+317DOWN,Shahdara Terminal to Shivaji Stadium Terminal,Delhi Secretariat,8,100.0,262,混雑
+DW-3DOWN,Rohini Sec 16 (T) to Dwarka Sec 16C/GGS IP University,Mangol Puri B Block (ORR),9,100.0,107,混雑
+721DOWN,Manglapuri / Palam Village to ISBT Bridge,PS Mayapuri,9,100.0,465,混雑
+RL-77EXTDOWN,Dwarka Sec 19 Pocket B (T) to New Delhi Railway Station Gate 2,Talkatora Stadium Garden,8,100.0,45,混雑

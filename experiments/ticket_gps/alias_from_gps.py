@@ -28,7 +28,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 from tsh import common as C  # noqa: E402
-from tsh.crowding import match_stops, norm  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from legacy_match import match_stops  # noqa: E402  改良前の照合（この実験は改良前の照合を点検したもの）
 
 OUT = Path(__file__).resolve().parent / "out"
 KMIN, KMAX = -3, 6          # ずれ k の範囲（これより外は投票に使わない）

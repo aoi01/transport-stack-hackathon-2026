@@ -2,8 +2,8 @@
 
 手順:
   1. 乗車券の route（例 8UP）を GTFS の route_short_name で route_id に対応づける（上り/下りは別 route_id）。
-  2. 乗車・降車の停留所名を、その路線の代表パターンの停留所名と照合する
-     （正規化した完全一致 → 表記ゆれはあいまい一致 rapidfuzz で 85 点以上）。
+  2. 乗車・降車の停留所名を、その路線の代表パターンの停留所と照合する（tsh.stopmatch: 完全一致 → 略語・音写の
+     規則 → ガードつきのあいまい一致 → 地理的な退避、さらに車両番号つきの券の GPS で名前の別名を学ぶ）。
      乗車 seq i、降車 seq j（i より後で最初に出てくる同名停留所）。j <= i の券は捨てる。
   3. 券 1 枚の乗客（passenger_count 人）は、乗車時刻の時間帯に区間 i→i+1, …, j-1→j に乗っていたとみなす。
   4. 路線 × 区間 × 日 × 時間帯の「乗っていた人数（標本）」を、その日・時間帯にその路線を走った便の数で割り、
@@ -17,14 +17,15 @@
 """
 from __future__ import annotations
 
-import re
+import json
 import sys
 
 import numpy as np
 import pandas as pd
-from rapidfuzz import fuzz, process
 
 from . import common as C
+from . import stopmatch as SM
+from .stopmatch import norm  # noqa: F401  （以前からの名前で使えるように）
 from .traveltime import passages_glob
 
 CAPTURE_SHARE = 0.035                  # 電子乗車券の捕捉率（3〜4% の中央）
@@ -33,14 +34,6 @@ SEATS = 35
 COMFORT = 60
 CRUSH = 100   # 12m 車の詰め込み時の上限の目安
 LEVELS = ["座れる", "立つ", "混雑"]
-
-
-def norm(s: str) -> str:
-    s = str(s).lower()
-    s = s.replace("&", " and ")
-    s = re.sub(r"\b(bus stop|bus stand|busstop|stop)\b", " ", s)
-    s = re.sub(r"[^a-z0-9]+", " ", s)
-    return re.sub(r"\s+", " ", s).strip()
 
 
 def level(load: float) -> str:
@@ -55,66 +48,8 @@ def confidence(n: float) -> str:
     return "高" if n >= 30 else ("中" if n >= 10 else "低")
 
 
-def match_stops(tk: pd.DataFrame, pat: pd.DataFrame) -> pd.DataFrame:
-    """(route_id, 停留所名) → 代表パターン上の seq の一覧。"""
-    pat = pat.assign(nname=pat.stop_name.map(norm))
-    by_route = {r: g for r, g in pat.groupby("route_id")}
-    # GTFS の停留所名は「A / B」のように複数の呼び名をつないでいるので、"/" で分けた各部分も候補にする
-    parts = pat.assign(part=pat.stop_name.str.split("/")).explode("part")
-    parts["pname"] = parts.part.map(norm)
-    parts = parts[parts.pname != ""]
-    parts_by_route = {r: g for r, g in parts.groupby("route_id")}
-    pairs = pd.concat([
-        tk[["route_id", "start_stop_name"]].rename(columns={"start_stop_name": "name"}),
-        tk[["route_id", "end_stop_name"]].rename(columns={"end_stop_name": "name"}),
-    ]).drop_duplicates()
-    # 全停留所の名前 → 座標（路線の代表パターンに無い停留所 ID の名前でも場所が分かるように）
-    allst = C.stops().assign(nname=lambda d: d.stop_name.map(norm))
-    name_xy = {n: g[["stop_lat", "stop_lon"]].to_numpy() for n, g in allst.groupby("nname")}
-    all_names = list(name_xy.keys())
-    rows = []
-    for r in pairs.itertuples():
-        g = by_route.get(r.route_id)
-        if g is None:
-            continue
-        nn = norm(r.name)
-        pg = parts_by_route[r.route_id]
-        hit = g[g.nname == nn]
-        how = "exact"
-        if hit.empty:
-            hit = g[g.seq.isin(pg[pg.pname == nn].seq)]
-        if hit.empty:
-            # あいまい一致：語の並びの近さ（token_sort）と、片方の語がもう片方に含まれるか（token_set）
-            cands = pg.pname.unique().tolist()
-            sc = [(0.5 * fuzz.token_sort_ratio(nn, c) + 0.5 * fuzz.token_set_ratio(nn, c), c) for c in cands]
-            s_best, c_best = max(sc) if sc else (0, None)
-            if s_best >= 85:
-                hit = g[g.seq.isin(pg[pg.pname == c_best].seq)]
-                how = "fuzzy"
-        if hit.empty:
-            # 退避: 全停留所から名前で場所を引き、その路線で 400m 以内の最寄り停留所に寄せる
-            key = nn if nn in name_xy else None
-            if key is None:
-                b2 = process.extractOne(nn, all_names, scorer=fuzz.token_sort_ratio)
-                key = b2[0] if b2 is not None and b2[1] >= 90 else None
-            if key is not None:
-                xy = name_xy[key]
-                d = np.min(C.dist_m(g.stop_lat.to_numpy()[:, None], g.stop_lon.to_numpy()[:, None],
-                                    xy[None, :, 0], xy[None, :, 1]), axis=1)
-                if d.min() <= 400:
-                    hit = g.iloc[[int(np.argmin(d))]]
-                    how = "nearby"
-        if hit.empty:
-            continue
-        rows.append((r.route_id, r.name, sorted(hit.seq.tolist()), how))
-    return pd.DataFrame(rows, columns=["route_id", "name", "seqs", "how"])
-
-
-def build_tickets() -> pd.DataFrame:
-    """乗車券を読み、路線・乗車 seq・降車 seq を付けた表を返す（data/processed/tickets_matched.parquet）。"""
-    out = C.PROCESSED / "tickets_matched.parquet"
-    if out.exists():
-        return pd.read_parquet(out)
+def load_tickets() -> pd.DataFrame:
+    """乗車券の CSV を読み、路線（route_id）と日付を付ける（停留所の照合の前）。"""
     con = C.connect()
     tk = con.execute(f"""
         SELECT CAST(passenger_count AS INT) AS pax, TRY_CAST(amount AS DOUBLE) AS amount,
@@ -126,33 +61,39 @@ def build_tickets() -> pd.DataFrame:
     tk["created_at"] = tk.created_at.dt.tz_convert(C.TZ)
     r = C.routes()[["route_id", "route_short_name"]].rename(columns={"route_short_name": "route"})
     tk = tk.merge(r, on="route", how="left")
-    n0 = len(tk)
-    pat = C.patterns()
-    mt = match_stops(tk.dropna(subset=["route_id"]), pat)
-    look = {(a, b): s for a, b, s in zip(mt.route_id, mt.name, mt.seqs)}
-    how = {(a, b): h for a, b, h in zip(mt.route_id, mt.name, mt.how)}
-    i_list, j_list, h_list = [], [], []
-    for rid, s, e in zip(tk.route_id, tk.start_stop_name, tk.end_stop_name):
-        si, se = look.get((rid, s)), look.get((rid, e))
-        if not si or not se:
-            i_list.append(-1); j_list.append(-1); h_list.append(None)
-            continue
-        i = si[0]
-        later = [x for x in se if x > i]
-        j = later[0] if later else -1
-        i_list.append(i); j_list.append(j)
-        hs = {how[(rid, s)], how[(rid, e)]}
-        h_list.append("nearby" if "nearby" in hs else ("fuzzy" if "fuzzy" in hs else "exact"))
-    tk["i"], tk["j"], tk["match"] = i_list, j_list, h_list
     tk["date"] = tk.created_at.dt.date
+    return tk
+
+
+def build_tickets(rebuild: bool = False) -> pd.DataFrame:
+    """乗車券を読み、路線・乗車 seq・降車 seq を付けた表を返す（data/processed/tickets_matched.parquet）。
+
+    照合の中身は tsh.stopmatch。（路線, 名前）ごとの結果は data/processed/stop_match.parquet、
+    名前を含まない集計は results/stop_match_metrics.json に保存する。
+    """
+    out = C.PROCESSED / "tickets_matched.parquet"
+    if out.exists() and not rebuild:
+        return pd.read_parquet(out)
+    tk = load_tickets()
+    pat = C.patterns()
+    pairs = SM.name_pairs(tk)
+    mt = SM.match_names(pairs, pat)
+    gv, pk = SM.gps_votes(tk[tk.route_id.notna()], mt, pat, C.TRAIN_DAYS)   # 検証週は使わない
+    fin = SM.resolve(mt, gv, pat)
+    tk = SM.assign(tk, fin)
     tk["hr"] = tk.created_at.dt.hour
     tk["day_type"] = tk.date.map(C.day_type)
-    stats = {
-        "tickets": n0,
-        "route_matched": int(tk.route_id.notna().sum()),
-        "both_stops_matched_and_forward": int((tk.j > tk.i).sum()),
-    }
-    print("乗車券の対応づけ:", stats)
+    g = gv.rename(columns={"n": "gps_n", "share": "gps_share", "margin": "gps_margin"})
+    tab = fin.merge(mt[["route_id", "name", "seqs", "how", "step"]].rename(
+        columns={"seqs": "seqs_str", "how": "how_str", "step": "step_str"}), on=["route_id", "name"])
+    tab.merge(g, on=["route_id", "name"], how="left").merge(pairs, on=["route_id", "name"], how="left") \
+       .to_parquet(C.PROCESSED / "stop_match.parquet", index=False)
+    m = SM.metrics(tk, mt, fin, gv, pk)
+    m["gps_votes_learned_from"] = f"{C.TRAIN_DAYS[0]}..{C.TRAIN_DAYS[-1]}"
+    (C.ROOT / "results").mkdir(exist_ok=True)
+    (C.ROOT / "results" / "stop_match_metrics.json").write_text(json.dumps(m, ensure_ascii=False, indent=1), encoding="utf-8")
+    print("乗車券の対応づけ:", {k: m[k] for k in ("tickets", "route_matched_%", "unmatched_ends_%",
+                                              "tickets_both_ends_matched_forward_%", "tickets_by_method_%")})
     tk.to_parquet(out, index=False)
     return tk
 
@@ -257,7 +198,9 @@ class CrowdingModel:
 def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8")
     which = sys.argv[1] if len(sys.argv) > 1 else "train"
-    if which == "all":
+    if which == "tickets":   # 停留所名の照合をやり直す（GPS の多数決は data/processed/stop_alias_gps.parquet を使い回す）
+        build_tickets(rebuild=True)
+    elif which == "all":
         build(C.TRAIN_DAYS + C.TEST_DAYS, "all")
     elif which == "test":
         build(C.TEST_DAYS, "test")

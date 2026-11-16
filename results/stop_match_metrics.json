@@ -1,0 +1,147 @@
+{
+ "tickets": 2559899,
+ "route_matched_%": 98.2,
+ "ends_with_route": 5029354,
+ "ends_by_method_before_gps_%": {
+  "exact": 71.7,
+  "fuzzy": 10.98,
+  "rule": 9.08,
+  "none": 4.68,
+  "nearby": 3.57
+ },
+ "ends_by_method_%": {
+  "exact": 71.7,
+  "fuzzy": 10.93,
+  "rule": 9.08,
+  "nearby": 3.56,
+  "none": 3.5,
+  "gps": 1.23
+ },
+ "ends_by_step_%": {
+  "exact": 71.29,
+  "contain": 6.86,
+  "abbr": 4.79,
+  "nearby": 3.56,
+  "none": 3.08,
+  "fuzzy_tok": 2.63,
+  "skeleton": 1.83,
+  "phonetic": 1.46,
+  "fuzzy_fold": 1.38,
+  "gps_fill": 1.18,
+  "sorted": 0.97,
+  "part:exact": 0.41,
+  "ambiguous": 0.4,
+  "part:contain": 0.06,
+  "gps_over_fuzzy": 0.05,
+  "part:abbr": 0.02,
+  "none|gps_terminal_skip": 0.02,
+  "gps_over_nearby": 0.01,
+  "part:fuzzy_tok": 0.0,
+  "part:skeleton": 0.0,
+  "part:phonetic": 0.0,
+  "part:fuzzy_fold": 0.0
+ },
+ "unmatched_ends_%": 3.5,
+ "tickets_both_ends_matched_forward_%": 91.4,
+ "tickets_by_method_%": {
+  "exact": 61.6,
+  "fuzzy": 18.4,
+  "rule": 11.4,
+  "nearby": 6.9,
+  "gps": 1.7
+ },
+ "gps_offset_distribution_P(k)": {
+  "-3": 0.0047,
+  "-2": 0.0124,
+  "-1": 0.0529,
+  "0": 0.649,
+  "1": 0.2343,
+  "2": 0.0247,
+  "3": 0.0065,
+  "4": 0.0027,
+  "5": 0.0014,
+  "6": 0.0008
+ },
+ "gps_pairs_confident": 5735,
+ "string_match_agreement_with_gps": {
+  "abbr": {
+   "pairs": 255,
+   "agree_%": 97.3,
+   "agree_within1_%": 99.2,
+   "agree_ticket_weighted_%": 98.6
+  },
+  "contain": {
+   "pairs": 357,
+   "agree_%": 96.1,
+   "agree_within1_%": 99.7,
+   "agree_ticket_weighted_%": 98.6
+  },
+  "exact": {
+   "pairs": 4099,
+   "agree_%": 97.8,
+   "agree_within1_%": 99.8,
+   "agree_ticket_weighted_%": 97.8
+  },
+  "fuzzy_fold": {
+   "pairs": 74,
+   "agree_%": 90.5,
+   "agree_within1_%": 95.9,
+   "agree_ticket_weighted_%": 96.0
+  },
+  "fuzzy_tok": {
+   "pairs": 158,
+   "agree_%": 88.0,
+   "agree_within1_%": 93.7,
+   "agree_ticket_weighted_%": 88.5
+  },
+  "nearby": {
+   "pairs": 201,
+   "agree_%": 78.6,
+   "agree_within1_%": 98.0,
+   "agree_ticket_weighted_%": 78.9
+  },
+  "part:abbr": {
+   "pairs": 1,
+   "agree_%": 100.0,
+   "agree_within1_%": 100.0,
+   "agree_ticket_weighted_%": 100.0
+  },
+  "part:contain": {
+   "pairs": 2,
+   "agree_%": 50.0,
+   "agree_within1_%": 50.0,
+   "agree_ticket_weighted_%": 80.4
+  },
+  "part:exact": {
+   "pairs": 24,
+   "agree_%": 100.0,
+   "agree_within1_%": 100.0,
+   "agree_ticket_weighted_%": 100.0
+  },
+  "phonetic": {
+   "pairs": 96,
+   "agree_%": 99.0,
+   "agree_within1_%": 100.0,
+   "agree_ticket_weighted_%": 99.4
+  },
+  "skeleton": {
+   "pairs": 118,
+   "agree_%": 96.6,
+   "agree_within1_%": 100.0,
+   "agree_ticket_weighted_%": 98.2
+  },
+  "sorted": {
+   "pairs": 67,
+   "agree_%": 98.5,
+   "agree_within1_%": 100.0,
+   "agree_ticket_weighted_%": 99.4
+  },
+  "(all)": {
+   "pairs": 5452,
+   "agree_%": 96.6,
+   "agree_within1_%": 99.4,
+   "agree_ticket_weighted_%": 97.2
+  }
+ },
+ "gps_votes_learned_from": "2026-10-01..2026-10-24"
+}
