@@ -8,3 +8,5 @@ __pycache__/
 # 検証用のサンプル（元データ由来の行単位データなのでコミットしない）
 results/*_samples.csv
 results/*.log
+# 実験の出力（元データ由来の停留所名・券の集計を含むのでコミットしない）
+experiments/**/out/
