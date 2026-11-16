@@ -29,7 +29,7 @@ python -m uvicorn app.server:app --app-dir . --port 8000   # http://localhost:80
 ```
 
 - `http://localhost:8000/` — journey planner (travel time + crowding).
-- `http://localhost:8000/passages` — stop-passage inspector: for any route, day and trip, shows the bus's raw GPS points, the stops, which GPS point was taken as the passage of each stop (60 m rule), stops that were missed or rejected, a replay of the bus, and a time–distance (Marey) diagram of all trips that day against the timetable.
+- `http://localhost:8000/passages` — stop-passage inspector: for any route, day and trip, shows the bus's raw GPS points, the stops, which GPS point was taken as the passage of each stop (60 m rule), stops that were missed or rejected, a replay of the bus with every other bus on the same line (both directions) moving on the map at the same time, the share of trips in which each stop's passage was detected that day, and a time–distance (Marey) diagram of all trips that day against the timetable.
 
 ## Data
 

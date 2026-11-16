@@ -5,6 +5,8 @@ GPS の点から「どのバスが、どの停留所を、何時に通ったか�
           通過とみなした点と停留所を結ぶ線。再生ボタンでバスの動きをたどれる。
   - 時間・距離の図（マーレイ図）: 横が時刻、縦が始点からの距離。その日の全便の通過を線で描き、
           選んだ便の GPS の点と時刻表の線を重ねる。線の傾きが速さ、線どうしの間隔が運行間隔になる。
+  - 同じ系統の全バス: 選んだ便のほか、その日にこの系統（上り・下り）を走った全バスを、再生の時刻に合わせて地図で動かす。
+  - 停留所ごとの検出率: その日にこの停留所の前後を走った便のうち、通過を検出できた便の割合。
 
 画面:  http://localhost:8000/passages （app.server に組み込み済み）
 単体:  python -m uvicorn app.viz:app --app-dir . --port 8001  → http://localhost:8001/passages
@@ -13,9 +15,12 @@ API:
   GET /viz/api/trips?route_id=2232&date=2026-10-15
   GET /viz/api/trip?route_id=2232&date=2026-10-15&vehicle_id=DL1PD5165&trip_id=2232_08_23_474
   GET /viz/api/marey?route_id=2232&date=2026-10-15
+  GET /viz/api/fleet?route_id=2232&date=2026-10-15     （上り・下りの全バスの GPS、30秒おきに間引き）
+  GET /viz/api/overview                                 （10月の全体と日ごとの、検出した路線・車両・便・通過の数）
 """
 from __future__ import annotations
 
+import re
 import sys
 from datetime import date, datetime, timedelta, timezone
 from functools import lru_cache
@@ -127,13 +132,25 @@ def routes(q: str = Query("", description="路線番号の一部（例: 764, 534
 def trips(route_id: str, date: str):
     d = _day(date)
     pf, _ = _files(d)
-    n_stops = len(_route(route_id))
+    st = _route(route_id)
+    n_stops = len(st)
     with duckdb.connect() as con:
         df = con.execute(f"""
             SELECT vehicle_id, trip_id, count(*) AS n, min(seq) AS s0, max(seq) AS s1,
                    epoch(min(ts)) AS t0, epoch(max(ts)) AS t1, median(dist_m) AS med_d
             FROM '{pf}' WHERE route_id = ? GROUP BY ALL ORDER BY t0""", [int(route_id)]).df()
-    return {"route_id": route_id, "date": str(d), "n_stops": n_stops,
+        per = con.execute(f"""
+            WITH p AS (SELECT vehicle_id, trip_id, seq FROM '{pf}' WHERE route_id = ?),
+                 t AS (SELECT vehicle_id, trip_id, min(seq) AS s0, max(seq) AS s1 FROM p GROUP BY ALL)
+            SELECT p.seq, count(*) AS n, count(*) FILTER (WHERE t.s0 < p.seq AND p.seq < t.s1) AS n_in
+            FROM p JOIN t USING (vehicle_id, trip_id) GROUP BY p.seq""", [int(route_id)]).df()
+    # 停留所ごとの検出率: 最初と最後に検出した停留所の「間」にこの停留所がある便（＝確実にここを通った便）のうち、
+    # ここでも通過を検出できた便の割合。最初・最後の停留所そのものは、検出した便しか数えられないので率を出さない
+    n_all, n_in = dict(zip(per.seq, per.n)), dict(zip(per.seq, per.n_in))
+    s0, s1 = df.s0.to_numpy(), df.s1.to_numpy()
+    seq_stats = [{"seq": int(q), "n": int(n_all.get(q, 0)), "n_in": int(n_in.get(q, 0)),
+                  "cover": int(((s0 < q) & (s1 > q)).sum())} for q in st.seq]
+    return {"route_id": route_id, "date": str(d), "n_stops": n_stops, "seq_stats": seq_stats,
             "trips": [{"vehicle_id": r.vehicle_id, "trip_id": r.trip_id, "n": int(r.n), "s0": int(r.s0), "s1": int(r.s1),
                        "start": _hm(r.t0), "end": _hm(r.t1), "minutes": round((r.t1 - r.t0) / 60, 1),
                        "med_dist_m": round(float(r.med_d), 1)} for r in df.itertuples()]}
@@ -222,6 +239,63 @@ def marey(route_id: str, date: str):
     return {"route_id": route_id, "date": str(d), "day0": day0,
             "stops": [{"seq": int(r.seq), "name": r.stop_name, "km": round(float(r.cum_m) / 1000, 3)} for r in st.itertuples()],
             "trips": out, "schedule": sched}
+
+
+def _pair(route_id: str) -> list[dict]:
+    """選んだ路線と、同じ系統の逆向きの路線（764UP ↔ 764DOWN）。"""
+    p = _pat().drop_duplicates("route_id")
+    names = dict(zip(p.route_id, p.route_short_name))
+    name = names.get(str(route_id)) or ""
+    out = [{"route_id": str(route_id), "name": name, "dir": "same"}]
+    m = re.match(r"^(.*?)(UP|DOWN)$", name)
+    if m:
+        other = m.group(1) + ("DOWN" if m.group(2) == "UP" else "UP")
+        out += [{"route_id": r, "name": n, "dir": "opposite"} for r, n in names.items() if n == other]
+    return out
+
+
+@router.get("/viz/api/fleet")
+def fleet(route_id: str, date: str, step_s: int = Query(30, ge=5, le=120)):
+    """その日にこの系統（上り・下り）を走った全バスの GPS。地図で全バスを同時に動かすために、step_s 秒おきに間引く。"""
+    d = _day(date)
+    _, gf = _files(d)
+    pair = _pair(route_id)
+    ids = [int(r["route_id"]) for r in pair]
+    with duckdb.connect() as con:
+        df = con.execute(f"""
+            SELECT route_id, vehicle_id, trip_id, CAST(epoch(ts) AS BIGINT) AS t, round(lat, 5) AS lat, round(lng, 5) AS lng
+            FROM '{gf}' WHERE route_id IN ({",".join("?" * len(ids))})
+            ORDER BY route_id, vehicle_id, trip_id, ts""", ids).df()
+    df["b"] = df.t // step_s
+    df = df.drop_duplicates(["route_id", "vehicle_id", "trip_id", "b"])
+    dirs = {int(r["route_id"]): r["dir"] for r in pair}
+    trips = []
+    for (rid, v, tid), g in df.groupby(["route_id", "vehicle_id", "trip_id"], sort=False):
+        if len(g) < 5:   # 数点しかない便（GPS の乱れや便の区切りの誤り）は出さない
+            continue
+        trips.append({"route_id": str(rid), "dir": dirs[int(rid)], "vehicle_id": v, "trip_id": tid,
+                      "pts": [[int(t), float(a), float(b)] for t, a, b in zip(g.t, g.lat, g.lng)]})
+    return {"route_id": route_id, "date": str(d), "routes": pair, "step_s": step_s, "trips": trips}
+
+
+@lru_cache(maxsize=1)
+def _overview() -> dict:
+    src = f"read_parquet('{(PASS_DIR / '*' / 'part.parquet').as_posix()}', hive_partitioning = false)"
+    with duckdb.connect() as con:
+        tot = con.execute(f"""SELECT count(*), count(DISTINCT (date, vehicle_id, trip_id)), count(DISTINCT route_id),
+                                     count(DISTINCT vehicle_id) FROM {src}""").fetchone()
+        per = con.execute(f"""SELECT date, count(*), count(DISTINCT (vehicle_id, trip_id)), count(DISTINCT route_id),
+                                     count(DISTINCT vehicle_id) FROM {src} GROUP BY date ORDER BY date""").fetchall()
+    keys = ["passages", "trips", "routes", "vehicles"]
+    return {"total": dict(zip(keys, map(int, tot))),
+            "days": {str(r[0]): dict(zip(keys, map(int, r[1:]))) for r in per},
+            "n_routes_gtfs": int(_pat().route_id.nunique())}
+
+
+@router.get("/viz/api/overview")
+def overview():
+    """10月の全体と日ごとに、通過を検出した路線・車両・便・通過の数。"""
+    return _overview()
 
 
 @router.get("/passages")
