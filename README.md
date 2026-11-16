@@ -13,7 +13,7 @@ Process, methods and validation results: [`docs/phase1_prototype.md`](docs/phase
 | | Held-out week (Oct 25–31) result |
 |---|---|
 | P1 in-vehicle time | median abs. error **10.0%** (ensemble of segment- and link-level LightGBM with recent preceding-bus data); GTFS timetable 25.9%. 85th-percentile "safe" time is calibrated (85.1% of rides arrive within it) |
-| P1 wait / door-to-door | wait 33.3%, door-to-door 23.5% with live positions + opposite-direction trip chaining (timetable 36.5%) |
+| P1 wait / door-to-door | wait 28.9%, door-to-door 20.4% with live positions, opposite-direction trip chaining, and an "actual departures" timetable learned from October GPS for when no bus is visible (timetable 36.5%; GTFS timetable itself did not match actual departures) |
 | P1 journey replay (600 OD pairs, planning ahead) | top option median error 35.5% vs timetable 43.0%; picked the actually fastest option 62% of the time |
 | P2 ticket → stop matching (all Oct tickets) | 91.4% of tickets get both stops on the GTFS route (was 79.2%): abbreviation/transliteration rules, a number guard, and stop aliases learned from where the bus was (GPS) when each ticket was bought; matches agree with the GPS-based stop 96.6% of the time |
 | P2 crowding | trip-level holdout: Poisson deviance −5.6% and correlation 0.47→0.53 with trip-based shrinkage; per-route expansion bounded by vehicle capacity; seat/standing/crowded probabilities |
