@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>停留所の通過を確かめる</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+  :root { --fg:#1d2433; --muted:#667085; --line:#e4e7ec; --soft:#f5f7fa; --pass:#1a7f4b; --order:#b7791f; --none:#c0392b; --sel:#e07a3a; --accent:#2457c5; }
+  * { box-sizing:border-box; }
+  html, body { height:100%; }
+  body { margin:0; font:14px/1.5 system-ui,-apple-system,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif; color:var(--fg); background:#fff; }
+  .wrap { display:grid; grid-template-columns:410px 1fr; height:100vh; }
+  aside { border-right:1px solid var(--line); overflow:auto; padding:14px 16px; }
+  main { display:grid; grid-template-rows:57% 43%; min-width:0; min-height:0; }
+  #map { min-height:0; }
+  #chartbox { border-top:1px solid var(--line); display:flex; flex-direction:column; min-height:0; }
+  .tool { display:flex; gap:8px; align-items:center; padding:6px 10px; border-bottom:1px solid var(--line); flex-wrap:wrap; font-size:13px; }
+  .tool select, .tool button { width:auto; }
+  #chart { flex:1; min-height:220px; width:100%; display:block; }
+  h1 { font-size:17px; margin:0 0 4px; }
+  h2 { font-size:14px; margin:14px 0 4px; }
+  .sub { color:var(--muted); font-size:12px; margin-bottom:8px; }
+  a { color:var(--accent); }
+  label { display:block; font-size:12px; color:var(--muted); margin:8px 0 2px; }
+  input, select, button { font:inherit; padding:5px 8px; border:1px solid var(--line); border-radius:6px; }
+  input, select { width:100%; background:#fff; }
+  button { background:var(--accent); color:#fff; border:none; cursor:pointer; }
+  .row { display:flex; gap:8px; } .row > * { flex:1; min-width:0; }
+  .hint { background:var(--soft); border-radius:6px; padding:8px 10px; font-size:12px; color:#475467; margin:8px 0; }
+  table { border-collapse:collapse; width:100%; font-size:12px; }
+  th, td { padding:3px 6px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; vertical-align:top; }
+  th { position:sticky; top:0; background:#fff; color:var(--muted); font-weight:600; }
+  td.name { white-space:normal; }
+  tr.click { cursor:pointer; } tr.click:hover { background:var(--soft); } tr.sel { background:#fff1e6; }
+  .box { max-height:200px; overflow:auto; border:1px solid var(--line); border-radius:6px; }
+  .badge { display:inline-block; padding:0 6px; border-radius:10px; color:#fff; font-size:11px; }
+  .b-pass { background:var(--pass); } .b-order { background:var(--order); } .b-none { background:var(--none); }
+  .kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin:6px 0; }
+  .kpi { background:var(--soft); border-radius:6px; padding:6px 8px; }
+  .kpi b { display:block; font-size:16px; font-variant-numeric:tabular-nums; }
+  .kpi span { font-size:11px; color:var(--muted); }
+  .legend div { display:flex; align-items:center; gap:8px; font-size:12px; margin:3px 0; }
+  .sw { width:12px; height:12px; border-radius:50%; display:inline-block; flex:none; }
+  .ln { width:22px; height:0; border-top:3px solid var(--sel); display:inline-block; flex:none; }
+  .muted { color:var(--muted); font-size:12px; }
+  #tlabel { font-variant-numeric:tabular-nums; font-weight:600; min-width:72px; }
+  #slider { flex:1; min-width:160px; width:auto; padding:0; }
+  #status { color:var(--none); font-size:12px; }
+  .key { display:inline-flex; align-items:center; gap:4px; color:var(--muted); font-size:12px; }
+  @media (max-width:900px) { .wrap { grid-template-columns:1fr; height:auto; } main { grid-template-rows:60vh auto; } #chart { flex:none; height:380px; } aside { border-right:none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<aside>
+  <h1>停留所の通過を確かめる</h1>
+  <div class="sub">バスの GPS（2026年10月）から「どのバスが、どの停留所を、何時に通ったか」を検出した結果を、1便ずつ地図で見ます。<a href="/">← 経路検索に戻る</a></div>
+  <div class="hint"><b>判定のしかた</b>：GPS の点（約11秒おき）のうち、停留所から 60m 以内に来た点の中で最も近い点の時刻を「通過」とします。停留所の順番どおりに時刻が増えない通過（GPS の乱れ・折り返し・同じ停留所の再通過）は除き、5停留所未満しか検出できない便は使いません。ここで出した停留所間の時間が、乗車時間の予測の材料になります。</div>
+  <div class="row">
+    <div><label>路線を探す</label><input id="rq" placeholder="例: 764, 534, Nehru Place"></div>
+    <div style="flex:.8"><label>日付</label><select id="date"></select></div>
+  </div>
+  <label>路線</label><select id="route"></select>
+  <h2>便 <span id="tripcount" class="muted"></span></h2>
+  <div id="trips" class="box"></div>
+  <div id="status"></div>
+  <h2>選んだ便</h2>
+  <div id="summary" class="muted">便を選んでください。</div>
+  <div class="legend">
+    <div><span class="sw" style="background:var(--pass)"></span>通過を検出（60m 以内で最も近い点の時刻）</div>
+    <div><span class="sw" style="background:var(--order)"></span>近くを通ったが、順番の確認で除外</div>
+    <div><span class="sw" style="background:var(--none)"></span>60m 以内に GPS の点がない</div>
+    <div><span class="sw" style="background:linear-gradient(90deg,#8fb8ff,#1b2f73)"></span>GPS の点（薄い色ほど早い時刻）</div>
+    <div><span class="ln" style="border-top:2px dashed var(--pass)"></span>停留所と、通過とみなした点を結ぶ線</div>
+  </div>
+  <h2>停留所ごとの判定</h2>
+  <div class="muted">行をクリックすると、地図がその停留所に寄り、再生位置がその時刻に移ります。「点なし」の行の距離は、最も近い GPS の点までの距離です。</div>
+  <div id="stops"></div>
+</aside>
+<main>
+  <div id="map"></div>
+  <div id="chartbox">
+    <div class="tool">
+      <button id="play">▶ 再生</button>
+      <select id="speed"><option value="30">30倍速</option><option value="60" selected>60倍速</option><option value="180">180倍速</option></select>
+      <input id="slider" type="range" min="0" max="1" step="1" value="0">
+      <span id="tlabel">--:--:--</span>
+      <span id="passed" class="muted"></span>
+      <select id="range"><option value="trip">この便の前後45分</option><option value="day">1日全体（5〜24時）</option></select>
+      <label class="key" style="margin:0"><input id="sched" type="checkbox" checked style="width:auto">時刻表</label>
+    </div>
+    <div class="tool" style="border-bottom:none;padding-top:4px;padding-bottom:0">
+      <span class="key"><span class="ln"></span>選んだ便の通過</span>
+      <span class="key"><span class="sw" style="background:var(--accent);width:6px;height:6px"></span>その便の GPS の点</span>
+      <span class="key"><span class="ln" style="border-top:2px solid #7f8ba3"></span>同じ日のほかの便（クリックで選ぶ）</span>
+      <span class="key"><span class="ln" style="border-top:2px dashed #b9c1cf"></span>時刻表</span>
+      <span class="key">横が時刻、縦が始点からの距離。線が寝ているほど遅く、線どうしが近いほど続けて来る</span>
+    </div>
+    <svg id="chart"></svg>
+  </div>
+</main>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const IST = 5.5 * 3600;
+const COLORS = { pass:'#1a7f4b', order:'#b7791f', none:'#c0392b' };
+const SHORT = { pass:'通過', order:'除外', none:'点なし' };
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = (ep, sec = true) => { const d = new Date((ep + IST) * 1000); const p = n => String(n).padStart(2, '0');
+  return sec ? `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}` : `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`; };
+
+const map = L.map('map', { preferCanvas:true }).setView([28.61, 77.21], 11);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'&copy; OpenStreetMap' }).addTo(map);
+const lyr = L.layerGroup().addTo(map);
+const S = { route:null, date:null, trips:[], nStops:0, trip:null, marey:null, cur:null, playing:false, speed:60, range:'trip', sched:true };
+let stopMarkers = {}, bus = null, cursor = null, scale = null, raf = null, lastTs = null;
+
+async function api(path, params) {
+  const r = await fetch(path + '?' + new URLSearchParams(params));
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.detail || r.status);
+  return j;
+}
+function say(msg) { $('status').textContent = msg || ''; }
+
+// 日付（10月の31日分）
+(() => { const wd = '日月火水木金土'; for (let d = 1; d <= 31; d++) {
+  const o = document.createElement('option'); o.value = `2026-10-${String(d).padStart(2, '0')}`;
+  o.textContent = `10/${d}（${wd[new Date(Date.UTC(2026, 9, d)).getUTCDay()]}）`; $('date').appendChild(o); } })();
+
+async function searchRoutes(params, keep) {
+  const rs = await api('/viz/api/routes', { limit:60, ...params });
+  $('route').innerHTML = rs.map(r => `<option value="${r.route_id}">${esc(r.name)}　${esc(r.desc)}（${r.n_stops}停留所・${r.km}km）</option>`).join('');
+  if (keep && rs.some(r => r.route_id === keep)) $('route').value = keep;
+  return rs;
+}
+
+async function loadTrips(pick) {
+  stop();
+  S.route = $('route').value; S.date = $('date').value;
+  if (!S.route) return;
+  say(''); $('trips').innerHTML = '<p class="muted" style="padding:6px">読み込み中…</p>';
+  try {
+    const [tj, mj] = await Promise.all([api('/viz/api/trips', { route_id:S.route, date:S.date }), api('/viz/api/marey', { route_id:S.route, date:S.date })]);
+    S.trips = tj.trips; S.nStops = tj.n_stops; S.marey = mj;
+    $('tripcount').textContent = `${tj.trips.length} 便（停留所 ${tj.n_stops}）`;
+    if (!tj.trips.length) { $('trips').innerHTML = '<p class="muted" style="padding:6px">この日は通過を検出できた便がありません。</p>'; return; }
+    $('trips').innerHTML = '<table><tr><th>時刻</th><th>車両</th><th>検出した停留所</th><th>所要</th></tr>' + tj.trips.map((t, k) =>
+      `<tr class="click" data-k="${k}"><td>${t.start.slice(0, 5)}–${t.end.slice(0, 5)}</td><td>${esc(t.vehicle_id)}</td><td>${t.n} / ${tj.n_stops}</td><td>${t.minutes}分</td></tr>`).join('') + '</table>';
+    document.querySelectorAll('#trips tr.click').forEach(tr => tr.onclick = () => selectTrip(S.trips[+tr.dataset.k]));
+    let t = pick && S.trips.find(x => x.vehicle_id === pick.vehicle_id && x.trip_id === pick.trip_id);
+    if (!t) t = S.trips.find(x => x.start >= '08:00' && x.n >= 0.9 * tj.n_stops) || [...S.trips].sort((a, b) => b.n - a.n)[0];
+    await selectTrip(t);
+  } catch (e) { say('読み込めませんでした: ' + e.message); }
+}
+
+async function selectTrip(t) {
+  stop();
+  document.querySelectorAll('#trips tr.click').forEach(tr => tr.classList.toggle('sel', S.trips[+tr.dataset.k] === t));
+  const sel = document.querySelector('#trips tr.sel'); if (sel) sel.scrollIntoView({ block:'nearest' });
+  try {
+    const j = await api('/viz/api/trip', { route_id:S.route, date:S.date, vehicle_id:t.vehicle_id, trip_id:t.trip_id });
+    S.trip = j;
+    history.replaceState(null, '', '?' + new URLSearchParams({ route_id:S.route, date:S.date, vehicle_id:t.vehicle_id, trip_id:t.trip_id }));
+    renderSummary(j); renderStops(j); drawMap(j);
+    $('slider').min = j.gps[0].t; $('slider').max = j.gps[j.gps.length - 1].t;
+    setTime(j.gps[0].t);
+    drawChart();
+  } catch (e) { say('便を読み込めませんでした: ' + e.message); }
+}
+
+function renderSummary(j) {
+  const s = j.summary;
+  $('summary').innerHTML = `<div>${esc(j.name)}　${esc(j.desc)}<br>${j.date}・車両 ${esc(j.vehicle_id)}・便 ${esc(j.trip_id)}</div>
+  <div class="kpis">
+    <div class="kpi"><b style="color:${COLORS.pass}">${s.n_pass}</b><span>通過を検出</span></div>
+    <div class="kpi"><b style="color:${COLORS.order}">${s.n_order}</b><span>順番の確認で除外</span></div>
+    <div class="kpi"><b style="color:${COLORS.none}">${s.n_none}</b><span>${j.radius_m}m 以内に点なし</span></div>
+    <div class="kpi"><b>${s.n_points}</b><span>GPS の点（${s.interval_s ?? '-'}秒おき）</span></div>
+    <div class="kpi"><b>${s.med_dist_m ?? '-'}m</b><span>通過点と停留所の距離（中央値）</span></div>
+    <div class="kpi"><b>${s.start.slice(0, 5)}–${s.end.slice(0, 5)}</b><span>この便の GPS の記録</span></div>
+  </div>`;
+}
+
+function renderStops(j) {
+  let h = '<table><tr><th>#</th><th>停留所</th><th>通過</th><th>前の検出から</th><th>判定</th></tr>';
+  for (const s of j.stops) {
+    let link = '';
+    if (s.link) {
+      const kmh = s.link.sec > 0 ? (s.link.m / 1000) / (s.link.sec / 3600) : null;
+      link = `${(s.link.sec / 60).toFixed(1)}分${kmh != null ? '・' + kmh.toFixed(0) + 'km/h' : ''}`;
+    }
+    const tm = s.time ? s.time : `<span class="muted" title="最も近い GPS の点（${s.near_time}）までの距離">${s.dist_m}m</span>`;
+    h += `<tr class="click" data-seq="${s.seq}"><td>${s.seq}</td><td class="name">${esc(s.name)}</td><td>${tm}</td><td>${link}</td>`
+       + `<td><span class="badge b-${s.status}" title="${esc(s.label)}">${SHORT[s.status]}</span></td></tr>`;
+  }
+  $('stops').innerHTML = h + '</table>';
+  document.querySelectorAll('#stops tr.click').forEach(tr => tr.onclick = () => {
+    const s = j.stops.find(x => x.seq === +tr.dataset.seq);
+    stop(); map.setView([s.lat, s.lng], 17);
+    if (stopMarkers[s.seq]) stopMarkers[s.seq].openTooltip();
+    if (s.t != null) setTime(s.t);
+  });
+}
+
+function mix(a, b, x) {
+  const pa = [1, 3, 5].map(i => parseInt(a.slice(i, i + 2), 16)), pb = [1, 3, 5].map(i => parseInt(b.slice(i, i + 2), 16));
+  return '#' + pa.map((v, i) => Math.round(v + (pb[i] - v) * x).toString(16).padStart(2, '0')).join('');
+}
+
+function drawMap(j) {
+  lyr.clearLayers(); stopMarkers = {};
+  L.polyline(j.shape, { color:'#98a2b3', weight:6, opacity:.55 }).addTo(lyr).bindTooltip(`路線の形（${j.shape_source}）`);
+  const t0 = j.gps[0].t, t1 = j.gps[j.gps.length - 1].t;
+  for (const p of j.gps) {
+    L.circleMarker([p.lat, p.lng], { radius:3, stroke:false, fillColor:mix('#8fb8ff', '#1b2f73', (p.t - t0) / Math.max(1, t1 - t0)), fillOpacity:.9 })
+      .addTo(lyr).bindTooltip(`GPS ${p.time}${p.speed != null ? '・速度 ' + p.speed.toFixed(0) : ''}<br>始点から ${p.km.toFixed(2)}km（路線から ${p.off_m}m）`);
+  }
+  for (const s of j.stops) {
+    const col = COLORS[s.status];
+    L.circle([s.lat, s.lng], { radius:j.radius_m, color:col, weight:1, opacity:.6, fillOpacity:.05, interactive:false }).addTo(lyr);
+    if (s.point) L.polyline([[s.lat, s.lng], s.point], { color:col, weight:2, dashArray:'3 3', interactive:false }).addTo(lyr);
+    stopMarkers[s.seq] = L.circleMarker([s.lat, s.lng], { radius:6, color:col, weight:2, fillColor:col, fillOpacity:.15 }).addTo(lyr)
+      .bindTooltip(`<b>#${s.seq} ${esc(s.name)}</b><br>` + (s.status === 'pass'
+        ? `通過 ${s.time}（最も近い点まで ${s.dist_m}m）`
+        : `${esc(s.label)}<br>最も近い点まで ${s.dist_m}m（${s.near_time}）`));
+  }
+  bus = L.circleMarker([j.gps[0].lat, j.gps[0].lng], { radius:9, color:'#fff', weight:3, fillColor:'#e07a3a', fillOpacity:1 }).addTo(lyr).bindTooltip('バス（再生位置）');
+  map.fitBounds(L.latLngBounds(j.gps.map(p => [p.lat, p.lng])).pad(0.08));
+}
+
+function posAt(t) {
+  const g = S.trip.gps;
+  if (t <= g[0].t) return g[0];
+  if (t >= g[g.length - 1].t) return g[g.length - 1];
+  let lo = 0, hi = g.length - 1;
+  while (hi - lo > 1) { const m = (lo + hi) >> 1; if (g[m].t <= t) lo = m; else hi = m; }
+  const a = g[lo], b = g[hi], x = (t - a.t) / Math.max(1, b.t - a.t);
+  return { lat:a.lat + (b.lat - a.lat) * x, lng:a.lng + (b.lng - a.lng) * x, km:a.km + (b.km - a.km) * x };
+}
+
+function setTime(t) {
+  const j = S.trip; if (!j) return;
+  S.cur = +t; $('slider').value = t; $('tlabel').textContent = fmt(t);
+  const p = posAt(t); bus.setLatLng([p.lat, p.lng]);
+  let n = 0;
+  for (const s of j.stops) {
+    const done = s.t != null && s.t <= t; if (done) n++;
+    const m = stopMarkers[s.seq]; if (m) m.setStyle({ fillOpacity: done ? .95 : .15 });
+  }
+  $('passed').textContent = `通過済み ${n} / ${j.stops.length}`;
+  updateCursor();
+}
+
+function frame(ts) {
+  if (!S.playing) return;
+  if (lastTs != null) {
+    let t = S.cur + (ts - lastTs) / 1000 * S.speed; const max = +$('slider').max;
+    if (t >= max) { t = max; setTime(t); stop(); return; }
+    setTime(t);
+  }
+  lastTs = ts; raf = requestAnimationFrame(frame);
+}
+function play() { if (!S.trip) return; if (S.cur >= +$('slider').max) setTime(+$('slider').min); S.playing = true; lastTs = null; $('play').textContent = '⏸ 止める'; raf = requestAnimationFrame(frame); }
+function stop() { S.playing = false; $('play').textContent = '▶ 再生'; if (raf) cancelAnimationFrame(raf); raf = null; }
+
+// ---- 時間・距離の図（マーレイ図） ----
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+
+function drawChart() {
+  const svg = $('chart'); svg.innerHTML = ''; cursor = null;
+  const M = S.marey, j = S.trip; if (!M || !j) return;
+  const W = svg.clientWidth, H = svg.clientHeight; if (W < 60 || H < 60) return;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  const ml = 190, mr = 16, mt = 10, mb = 24;
+  const kmax = Math.max(0.1, ...M.stops.map(s => s.km));
+  const t0 = S.range === 'day' ? M.day0 + 5 * 3600 : j.gps[0].t - 45 * 60;
+  const t1 = S.range === 'day' ? M.day0 + 24 * 3600 : j.gps[j.gps.length - 1].t + 45 * 60;
+  const X = t => ml + (t - t0) / (t1 - t0) * (W - ml - mr), Y = k => mt + k / kmax * (H - mt - mb);
+  scale = { X, t0, t1, ml, mr, W };
+  const clip = el('clipPath', { id:'clip' }, el('defs', {}, svg)); el('rect', { x:ml, y:0, width:W - ml - mr, height:H }, clip);
+  let lastY = -99;
+  for (const s of M.stops) {
+    const y = Y(s.km);
+    el('line', { x1:ml, x2:W - mr, y1:y, y2:y, stroke:'#f0f2f5' }, svg);
+    if (y - lastY >= 13) {
+      const name = s.name.length > 26 ? s.name.slice(0, 25) + '…' : s.name;
+      el('text', { x:ml - 6, y:y + 4, 'text-anchor':'end', 'font-size':11, fill:'#667085' }, svg).textContent = `${s.seq} ${name}`;
+      lastY = y;
+    }
+  }
+  const span = t1 - t0, step = span > 8 * 3600 ? 3600 : span > 3 * 3600 ? 1800 : 900;
+  for (let t = Math.ceil((t0 + IST) / step) * step - IST; t <= t1; t += step) {
+    const x = X(t);
+    el('line', { x1:x, x2:x, y1:mt, y2:H - mb, stroke:'#eef0f4' }, svg);
+    el('text', { x, y:H - 7, 'text-anchor':'middle', 'font-size':11, fill:'#667085' }, svg).textContent = fmt(t, false);
+  }
+  const g = el('g', { 'clip-path':'url(#clip)' }, svg);
+  const d = pts => pts.map((p, i) => (i ? 'L' : 'M') + X(p[0]).toFixed(1) + ',' + Y(p[1]).toFixed(1)).join('');
+  const inView = pts => pts.length > 1 && pts[pts.length - 1][0] >= t0 && pts[0][0] <= t1;
+  if (S.sched) for (const s of M.schedule) if (inView(s)) el('path', { d:d(s), fill:'none', stroke:'#b9c1cf', 'stroke-width':1, 'stroke-dasharray':'4 3' }, g);
+  for (const tr of M.trips) {
+    if (!inView(tr.pts) || (tr.vehicle_id === j.vehicle_id && tr.trip_id === j.trip_id)) continue;
+    const p = el('path', { d:d(tr.pts), fill:'none', stroke:'#7f8ba3', 'stroke-width':1.5, opacity:.8, style:'cursor:pointer' }, g);
+    el('title', {}, p).textContent = `${tr.vehicle_id}　${fmt(tr.pts[0][0], false)} → ${fmt(tr.pts[tr.pts.length - 1][0], false)}（クリックでこの便を選ぶ）`;
+    p.addEventListener('click', e => { e.stopPropagation(); const t = S.trips.find(x => x.vehicle_id === tr.vehicle_id && x.trip_id === tr.trip_id); if (t) selectTrip(t); });
+  }
+  for (const p of j.gps) el('circle', { cx:X(p.t), cy:Y(p.km), r:1.7, fill:'#2457c5', opacity:.55 }, g);
+  const sp = j.stops.filter(s => s.t != null).map(s => [s.t, s.km]);
+  if (sp.length > 1) el('path', { d:d(sp), fill:'none', stroke:'#e07a3a', 'stroke-width':3 }, g);
+  for (const s of j.stops) if (s.t != null) {
+    const c = el('circle', { cx:X(s.t), cy:Y(s.km), r:3.3, fill:'#e07a3a', stroke:'#fff', 'stroke-width':1 }, g);
+    el('title', {}, c).textContent = `#${s.seq} ${s.name}　${s.time}`;
+  }
+  el('line', { x1:ml, x2:ml, y1:mt, y2:H - mb, stroke:'#98a2b3' }, svg);
+  cursor = el('line', { x1:0, x2:0, y1:mt, y2:H - mb, stroke:'#c0392b', 'stroke-width':1.5 }, svg);
+  updateCursor();
+}
+function updateCursor() {
+  if (!cursor || !scale || S.cur == null) return;
+  const x = scale.X(S.cur); cursor.setAttribute('x1', x); cursor.setAttribute('x2', x);
+  cursor.style.display = (x < scale.ml || x > scale.W - scale.mr) ? 'none' : '';
+}
+$('chart').addEventListener('click', e => {
+  if (!scale || !S.trip) return;
+  const r = $('chart').getBoundingClientRect();
+  const t = scale.t0 + (e.clientX - r.left - scale.ml) / (scale.W - scale.ml - scale.mr) * (scale.t1 - scale.t0);
+  const g = S.trip.gps; if (t >= g[0].t && t <= g[g.length - 1].t) { stop(); setTime(t); }
+});
+
+// ---- 操作 ----
+let timer = null;
+$('rq').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(async () => {
+  try { const rs = await searchRoutes({ q:$('rq').value.trim() }); if (rs.length) await loadTrips(); else say('該当する路線がありません'); } catch (e) { say(e.message); } }, 300); });
+$('route').onchange = () => loadTrips();
+$('date').onchange = () => loadTrips();
+$('play').onclick = () => S.playing ? stop() : play();
+$('speed').onchange = e => { S.speed = +e.target.value; };
+$('slider').oninput = e => { stop(); setTime(+e.target.value); };
+$('range').onchange = e => { S.range = e.target.value; drawChart(); };
+$('sched').onchange = e => { S.sched = e.target.checked; drawChart(); };
+window.addEventListener('resize', () => drawChart());
+
+(async () => {
+  const q = new URLSearchParams(location.search);
+  const rid = q.get('route_id') || '2232';
+  $('date').value = q.get('date') || '2026-10-15';
+  try {
+    const one = await api('/viz/api/routes', { route_id:rid });
+    const key = one.length ? one[0].name.replace(/(UP|DOWN)$/, '') : '764';
+    $('rq').value = key;
+    await searchRoutes({ q:key }, rid);
+    await loadTrips(q.get('vehicle_id') ? { vehicle_id:q.get('vehicle_id'), trip_id:q.get('trip_id') } : null);
+  } catch (e) { say('読み込めませんでした: ' + e.message); }
+})();
+</script>
+</body>
+</html>

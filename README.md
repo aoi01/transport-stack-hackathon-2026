@@ -28,6 +28,9 @@ pip install -r requirements.txt
 python -m uvicorn app.server:app --app-dir . --port 8000   # http://localhost:8000 , API docs at /docs
 ```
 
+- `http://localhost:8000/` — journey planner (travel time + crowding).
+- `http://localhost:8000/passages` — stop-passage inspector: for any route, day and trip, shows the bus's raw GPS points, the stops, which GPS point was taken as the passage of each stop (60 m rule), stops that were missed or rejected, a replay of the bus, and a time–distance (Marey) diagram of all trips that day against the timetable.
+
 ## Data
 
 Data comes from [Delhi Transport Stack](https://delhi.transportstack.in) and is **not** committed (see `.gitignore`).

@@ -8,6 +8,7 @@
 API:
   GET /journeys?from=28.6676,77.2285&to=28.5494,77.2510&depart=2026-11-17T08:30&sort=fastest|comfort&realtime=true
   GET /stops?q=nehru           停留所名の検索
+  GET /passages                停留所の通過を地図で確かめる画面（API は /viz/api/...、app/viz.py）
   GET /health
 """
 from __future__ import annotations
@@ -30,9 +31,12 @@ from tsh.realtime import LiveFeed  # noqa: E402
 from tsh.segmodel import SegModel  # noqa: E402
 from tsh.waitmodel import WaitModel  # noqa: E402
 
+from app.viz import router as viz_router  # noqa: E402  停留所の通過を確かめる画面（/passages）
+
 IST = timezone(timedelta(hours=5, minutes=30))
 app = FastAPI(title="Delhi bus journey planner (Transport Stack Hackathon 2026)",
               description="観測 GPS にもとづく所要時間と、乗車券にもとづく混雑度を示すバスの経路検索")
+app.include_router(viz_router)
 planner = Planner("all")
 live = LiveFeed(planner)
 live_links = LiveLinks(planner.tt)   # tsh.recorder が記録した GTFS-RT から直近 30 分の区間実績
