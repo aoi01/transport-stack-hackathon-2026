@@ -1,0 +1,118 @@
+{
+ "pairs": 600,
+ "top_option_replayable": 371,
+ "top_option_status_%": {
+  "ok": 61.8,
+  "nobus": 14.5,
+  "untracked": 23.7
+ },
+ "top_option_accuracy": {
+  "model": {
+   "n": 371,
+   "MAE_min": 21.46,
+   "MAPE_%": 22.9,
+   "MedAPE_%": 16.6,
+   "within20%_%": 56.9,
+   "bias_min": -1.73,
+   "median_err_min": 1.93,
+   "actual_mean_min": 95.3,
+   "within_5min_%": 20.8,
+   "within_10min_%": 41.2,
+   "within_15min_%": 54.4
+  },
+  "timetable": {
+   "n": 366,
+   "MAE_min": 32.63,
+   "MAPE_%": 31.4,
+   "MedAPE_%": 26.1,
+   "within20%_%": 41.0,
+   "bias_min": -20.06,
+   "median_err_min": -12.04,
+   "actual_mean_min": 95.1,
+   "within_5min_%": 17.0,
+   "within_10min_%": 30.5,
+   "within_15min_%": 43.7
+  }
+ },
+ "by_transfers": {
+  "乗換0回": {
+   "model": {
+    "n": 151,
+    "MAE_min": 17.01,
+    "MAPE_%": 23.7,
+    "MedAPE_%": 18.0,
+    "within20%_%": 55.0,
+    "bias_min": 0.01,
+    "median_err_min": 2.61,
+    "actual_mean_min": 74.2
+   },
+   "timetable": {
+    "n": 150,
+    "MAE_min": 23.1,
+    "MAPE_%": 30.1,
+    "MedAPE_%": 25.0,
+    "within20%_%": 40.0,
+    "bias_min": -14.66,
+    "median_err_min": -9.44,
+    "actual_mean_min": 74.0
+   }
+  },
+  "乗換1回": {
+   "model": {
+    "n": 220,
+    "MAE_min": 24.52,
+    "MAPE_%": 22.4,
+    "MedAPE_%": 15.6,
+    "within20%_%": 58.2,
+    "bias_min": -2.92,
+    "median_err_min": 1.09,
+    "actual_mean_min": 109.8
+   },
+   "timetable": {
+    "n": 216,
+    "MAE_min": 39.25,
+    "MAPE_%": 32.3,
+    "MedAPE_%": 26.9,
+    "within20%_%": 41.7,
+    "bias_min": -23.8,
+    "median_err_min": -16.15,
+    "actual_mean_min": 109.8
+   }
+  }
+ },
+ "top_option_safe": {
+  "n": 310,
+  "share_of_replayable_%": 83.6,
+  "arrived_by_safe_%": 86.8,
+  "mean_safe_minus_pred_min": 44.2
+ },
+ "by_first_wait_source": {
+  "過去の実績": {
+   "n": 3,
+   "MAE_min": 41.63,
+   "MAPE_%": 25.6,
+   "MedAPE_%": 17.0,
+   "within20%_%": 66.7,
+   "bias_min": -32.53,
+   "median_err_min": 2.1,
+   "actual_mean_min": 116.9
+  },
+  "過去の実際の通過の時刻表": {
+   "n": 368,
+   "MAE_min": 21.3,
+   "MAPE_%": 22.9,
+   "MedAPE_%": 16.6,
+   "within20%_%": 56.8,
+   "bias_min": -1.48,
+   "median_err_min": 1.86,
+   "actual_mean_min": 95.1
+  }
+ },
+ "route_choice": {
+  "pairs_with_2plus_replayable": 357,
+  "model_picked_actual_fastest_%": 60.5,
+  "timetable_picked_actual_fastest_%": 57.1,
+  "model_mean_regret_min": 10.5,
+  "timetable_mean_regret_min": 12.89
+ }
+}

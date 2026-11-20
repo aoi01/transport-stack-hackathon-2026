@@ -49,7 +49,7 @@ def main(n: int = 200) -> None:
         "kmh_door_to_door_median": round(float((f.km / (f.total_min / 60)).median()), 1),
     }
     print(json.dumps(res, ensure_ascii=False, indent=1))
-    out = C.ROOT / "results"
+    out = C.RESULTS
     out.mkdir(exist_ok=True)
     (out / "planner_coverage.json").write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
 

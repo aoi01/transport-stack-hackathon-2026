@@ -88,7 +88,7 @@ class LiveFeed:
                 t_k = datetime.fromtimestamp(ts, IST).replace(tzinfo=None)
                 eta = t_k + timedelta(seconds=self.p.tt.ride_sec(route_id, k, i, t_k))
                 w = (eta - t).total_seconds()
-                if w >= -60 and (best is None or w < best):
+                if w >= C.CATCH_MIN_S and (best is None or w < best):
                     best = max(w, 0.0)
             if wait_model is None:
                 return (best, "リアルタイム（手前を走るバス）") if best is not None else None

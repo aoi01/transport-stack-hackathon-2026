@@ -40,9 +40,10 @@
     <div><label>目的地</label><input id="to" value="28.5494,77.2510"></div>
   </div>
   <div class="row">
-    <div><label>出発時刻（IST）</label><input id="depart" type="datetime-local" value="2026-11-17T08:30"></div>
-    <div><label>並べ方</label><select id="sort"><option value="fastest">早い順</option><option value="comfort">快適さ重視</option></select></div>
+    <div><label>時刻の指定</label><select id="mode"><option value="depart">出発時刻</option><option value="arrive">到着時刻</option></select></div>
+    <div><label>時刻（IST）</label><input id="depart" type="datetime-local" value="2026-11-17T08:30"></div>
   </div>
+  <div><label>並べ方</label><select id="sort"><option value="fastest">早い順</option><option value="comfort">快適さ重視</option><option value="fewer_transfers">乗り換えが少ない順</option></select></div>
   <button id="go">検索</button>
   <div id="out"></div>
 </aside>
@@ -96,13 +97,21 @@ function legHtml(l){
 async function go(){
   setMarkers();
   out.innerHTML = '<p class="muted">検索中…</p>';
-  const q = new URLSearchParams({from: from.value, to: to.value, depart: depart.value, sort: sort.value});
+  const q = new URLSearchParams({from: from.value, to: to.value, [mode.value]: depart.value, sort: sort.value});
   try {
     const r = await fetch('/journeys?' + q); const j = await r.json();
     if (!r.ok) throw new Error(j.detail || r.status);
     if (!j.options.length) { out.innerHTML = '<p>経路が見つかりませんでした。</p>'; layer.clearLayers(); return; }
+    // 到着時刻を指定したとき: 85% の日で間に合う最も遅い出発を大きく出す
+    const head = o => j.arrive_by
+      ? (o.depart
+          ? `<div class="big">${o.depart} に出る <span class="muted">${j.arrive_by.slice(11,16)} までに着いた日 ${Math.round(o.on_time_share*100)}%・ふつうは ${o.arrive} 着（${o.total_min}分）・乗換 ${o.transfers}回</span></div>`
+          : `<div class="big">間に合う出発を出せない <span class="muted">乗換 ${o.transfers}回</span></div>`)
+      : `<div class="big">${o.total_min}分 <span class="muted">着 ${o.arrive}${o.arrive_safe ? '（余裕を見ると ' + o.arrive_safe + '）' : ''}・乗換 ${o.transfers}回</span></div>`;
     out.innerHTML = j.options.map((o,k)=>`<div class="opt" data-k="${k}">
-      <div class="big">${o.total_min}分 <span class="muted">着 ${o.arrive}${o.arrive_safe ? '（余裕を見ると ' + o.arrive_safe + '）' : ''}・乗換 ${o.transfers}回</span></div>
+      ${head(o)}
+      ${o.unreliable ? '<div class="muted">⚠ ' + o.total_source + '</div>' : (o.total_source ? '<div class="muted">' + o.total_source + '</div>' : '')}
+      ${o.safe_source && !o.arrive_safe ? '<div class="muted">⚠ ' + o.safe_source + '</div>' : ''}
       <div class="muted">徒歩 ${o.walk_min}分・待ち ${o.wait_min}分・乗車 ${o.ride_min}分・体感 ${o.perceived_min}分
         <span class="badge b-${o.crowding_worst}">${o.crowding_worst}</span></div>
       ${o.legs.map(legHtml).join('')}</div>`).join('');

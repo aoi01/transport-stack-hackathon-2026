@@ -10,3 +10,8 @@ results/*_samples.csv
 results/*.log
 # 実験の出力（元データ由来の停留所名・券の集計を含むのでコミットしない）
 experiments/**/out/
+# 検証のサンプル・実験のログと出力（元データ由来の行単位データ・停留所名を含むのでコミットしない）
+**/*_samples*.csv
+experiments/**/*.log
+experiments/**/out_*.csv
+experiments/**/*_report.txt

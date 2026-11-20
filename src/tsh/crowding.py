@@ -90,8 +90,8 @@ def build_tickets(rebuild: bool = False) -> pd.DataFrame:
        .to_parquet(C.PROCESSED / "stop_match.parquet", index=False)
     m = SM.metrics(tk, mt, fin, gv, pk)
     m["gps_votes_learned_from"] = f"{C.TRAIN_DAYS[0]}..{C.TRAIN_DAYS[-1]}"
-    (C.ROOT / "results").mkdir(exist_ok=True)
-    (C.ROOT / "results" / "stop_match_metrics.json").write_text(json.dumps(m, ensure_ascii=False, indent=1), encoding="utf-8")
+    (C.RESULTS).mkdir(exist_ok=True)
+    (C.RESULTS / "stop_match_metrics.json").write_text(json.dumps(m, ensure_ascii=False, indent=1), encoding="utf-8")
     print("乗車券の対応づけ:", {k: m[k] for k in ("tickets", "route_matched_%", "unmatched_ends_%",
                                               "tickets_both_ends_matched_forward_%", "tickets_by_method_%")})
     tk.to_parquet(out, index=False)

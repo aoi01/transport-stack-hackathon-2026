@@ -207,7 +207,7 @@ def train_segments(con) -> None:
 
 
 def test_segments(con) -> None:
-    s = pd.read_csv(C.ROOT / "results" / "p1_ride_samples.csv", parse_dates=["t_i", "t_j"], dtype={"route_id": str})
+    s = pd.read_csv(C.RESULTS / "p1_ride_samples.csv", parse_dates=["t_i", "t_j"], dtype={"route_id": str})
     t0 = s.t_i.dt.tz_localize(TZ)
     df = pd.DataFrame({
         "sid": np.arange(len(s)), "route_id": s.route_id.astype(int), "i": s.i, "j": s.j,
@@ -282,8 +282,8 @@ def main() -> None:
     q = {0.15: q[("live", 0.15)], 0.85: q[("live", 0.85)]}
     out = te[["sid", "route_id", "i", "j", "t0", "actual_s", "hr0", "day_type"]].assign(
         **{f"pred_{k}": v for k, v in preds.items()}, q15=q[0.15], q85=q[0.85])
-    out.to_csv(C.ROOT / "results" / "p1_segml_samples.csv", index=False)
-    (C.ROOT / "results" / "p1_segml_metrics.json").write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
+    out.to_csv(C.RESULTS / "p1_segml_samples.csv", index=False)
+    (C.RESULTS / "p1_segml_metrics.json").write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
     for k, v in res.items():
         if k.startswith("["):
             print(k, v)

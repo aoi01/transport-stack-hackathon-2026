@@ -1,0 +1,60 @@
+{
+ "pairs": 600,
+ "top_option_unreliable_%": 18.8,
+ "methods": {
+  "ours85": {
+   "departure_given": 487,
+   "replayable": 328,
+   "nobus": 32,
+   "untracked": 127,
+   "on_time_%_of_replayable": 81.7,
+   "on_time_%_incl_nobus": 74.4,
+   "median_budget_min": 111.5,
+   "median_early_min_when_on_time": 30.4,
+   "median_late_min_when_late": 14.8,
+   "late_over_10min_%_of_replayable": 11.3
+  },
+  "ours50": {
+   "departure_given": 554,
+   "replayable": 347,
+   "nobus": 65,
+   "untracked": 142,
+   "on_time_%_of_replayable": 51.6,
+   "on_time_%_incl_nobus": 43.4,
+   "median_budget_min": 95.2,
+   "median_early_min_when_on_time": 15.7,
+   "median_late_min_when_late": 20.7,
+   "late_over_10min_%_of_replayable": 34.3
+  },
+  "timetable": {
+   "departure_given": 566,
+   "replayable": 326,
+   "nobus": 87,
+   "untracked": 153,
+   "on_time_%_of_replayable": 28.2,
+   "on_time_%_incl_nobus": 22.3,
+   "median_budget_min": 74.0,
+   "median_early_min_when_on_time": 12.5,
+   "median_late_min_when_late": 32.7,
+   "late_over_10min_%_of_replayable": 58.9
+  }
+ },
+ "same_pairs": {
+  "n": 246,
+  "ours85": {
+   "on_time_%": 77.6,
+   "median_budget_min": 101.3,
+   "median_arrival_minus_target_min": -18.1
+  },
+  "ours50": {
+   "on_time_%": 48.4,
+   "median_budget_min": 75.6,
+   "median_arrival_minus_target_min": 0.7
+  },
+  "timetable": {
+   "on_time_%": 30.1,
+   "median_budget_min": 63.0,
+   "median_arrival_minus_target_min": 15.1
+  }
+ }
+}

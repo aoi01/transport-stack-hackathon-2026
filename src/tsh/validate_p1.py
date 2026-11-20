@@ -23,7 +23,7 @@ from . import common as C
 from .traveltime import TravelTimeModel, passages_glob
 
 RNG = np.random.default_rng(42)
-OUT = C.ROOT / "results"
+OUT = C.RESULTS
 
 
 def metrics(actual, pred) -> dict:
@@ -48,7 +48,7 @@ def load_test_passages() -> pd.DataFrame:
     df = con.execute(f"""
         SELECT date, vehicle_id, trip_id, CAST(route_id AS VARCHAR) AS route_id, seq,
                timezone('{C.TZ}', ts) AS ts
-        FROM read_parquet({passages_glob(C.TEST_DAYS)})
+        FROM read_parquet({passages_glob(C.TEST_DAYS, truth=True)})
     """).df()
     return df
 

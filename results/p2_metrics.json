@@ -37,8 +37,10 @@
    "spearman_r": 0.84,
    "MAE_people": 10.9,
    "median_abs_rel_err_%": 24.5,
+   "median_abs_rel_err_uncapped_%": 26.7,
    "level_agree_%": 73.4,
-   "level_within1_%": 97.8
+   "level_within1_%": 97.8,
+   "noise_floor_%": 16.1
   },
   "中": {
    "cells": 146239,
@@ -46,8 +48,10 @@
    "spearman_r": 0.784,
    "MAE_people": 10.8,
    "median_abs_rel_err_%": 33.3,
+   "median_abs_rel_err_uncapped_%": 33.6,
    "level_agree_%": 77.8,
-   "level_within1_%": 96.6
+   "level_within1_%": 96.6,
+   "noise_floor_%": 25.0
   },
   "低": {
    "cells": 34078,
@@ -55,8 +59,10 @@
    "spearman_r": 0.71,
    "MAE_people": 21.1,
    "median_abs_rel_err_%": 64.7,
+   "median_abs_rel_err_uncapped_%": 65.0,
    "level_agree_%": 67.5,
-   "level_within1_%": 89.5
+   "level_within1_%": 89.5,
+   "noise_floor_%": 33.3
   },
   "全体": {
    "cells": 360681,
@@ -64,9 +70,49 @@
    "spearman_r": 0.767,
    "MAE_people": 11.9,
    "median_abs_rel_err_%": 31.3,
+   "median_abs_rel_err_uncapped_%": 32.6,
    "level_agree_%": 74.6,
-   "level_within1_%": 96.5
-  }
+   "level_within1_%": 96.5,
+   "noise_floor_%": 20.0
+  },
+  "by_train_tickets": [
+   {
+    "train_tickets": "0–9",
+    "cells": 34078,
+    "median_abs_rel_err_uncapped_%": 65.0,
+    "noise_floor_%": 33.3
+   },
+   {
+    "train_tickets": "10–29",
+    "cells": 146239,
+    "median_abs_rel_err_uncapped_%": 33.6,
+    "noise_floor_%": 25.0
+   },
+   {
+    "train_tickets": "30–99",
+    "cells": 142867,
+    "median_abs_rel_err_uncapped_%": 28.6,
+    "noise_floor_%": 20.0
+   },
+   {
+    "train_tickets": "100–299",
+    "cells": 33767,
+    "median_abs_rel_err_uncapped_%": 20.8,
+    "noise_floor_%": 10.5
+   },
+   {
+    "train_tickets": "300–999",
+    "cells": 3711,
+    "median_abs_rel_err_uncapped_%": 18.6,
+    "noise_floor_%": 6.0
+   },
+   {
+    "train_tickets": "1000–",
+    "cells": 19,
+    "median_abs_rel_err_uncapped_%": 13.3,
+    "noise_floor_%": 4.3
+   }
+  ]
  },
  "ridership": {
   "e_ticket_pax_per_day": 88826,

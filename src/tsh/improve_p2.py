@@ -157,7 +157,7 @@ def main() -> None:
     print("選んだ α:", best_a)
     final = run(C.TRAIN_DAYS, C.TEST_DAYS, [None] + alphas, "[報告 10/1-24→10/25-31]")
     out = {"tuning": tune, "chosen": best_a, "report": final}
-    (C.ROOT / "results" / "p2_improve_metrics.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+    (C.RESULTS / "p2_improve_metrics.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
 if __name__ == "__main__":

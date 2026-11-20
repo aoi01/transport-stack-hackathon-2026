@@ -123,7 +123,7 @@ def main() -> None:
     res_fn = Residual(hw)
     feeders, ch_stats = chaining(C.TRAIN_DAYS, tt)
     print("折り返しの組:", ch_stats, flush=True)
-    s = pd.read_csv(C.ROOT / "results" / "p1_door_samples.csv", parse_dates=["depart"], dtype={"route_id": str})
+    s = pd.read_csv(C.RESULTS / "p1_door_samples.csv", parse_dates=["depart"], dtype={"route_id": str})
     ps = load_test_passages()
     ps["date"] = pd.to_datetime(ps.date).dt.date      # 検索のキー（Python の date）にそろえる
     by_rd = {k: g for k, g in ps.groupby(["route_id", "date"])}
@@ -220,8 +220,8 @@ def main() -> None:
     # 見え方別
     nv = x[~x.up]
     res["wait_when_no_upstream_bus"] = {names[k]: metrics(nv.actual_wait.clip(lower=30), nv[k]) for k in ["W0", "W2", "W4", "W5", "W6"]}
-    (C.ROOT / "results" / "p1_wait_metrics.json").write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
-    x.to_csv(C.ROOT / "results" / "p1_wait_samples.csv", index=False)
+    (C.RESULTS / "p1_wait_metrics.json").write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
+    x.to_csv(C.RESULTS / "p1_wait_samples.csv", index=False)
     print(json.dumps({k: v for k, v in res.items() if not isinstance(v, dict) or k == "chaining"}, ensure_ascii=False))
     for sec in ["wait", "door_total", "wait_when_no_upstream_bus"]:
         for k, v in res[sec].items():

@@ -1,0 +1,108 @@
+{
+ "pairs": 600,
+ "top_option_replayable": 392,
+ "top_option_status_%": {
+  "ok": 65.3,
+  "nobus": 10.0,
+  "untracked": 24.7
+ },
+ "top_option_accuracy": {
+  "model": {
+   "n": 392,
+   "MAE_min": 20.81,
+   "MAPE_%": 20.8,
+   "MedAPE_%": 16.2,
+   "within20%_%": 59.2,
+   "bias_min": -6.98,
+   "median_err_min": -0.78,
+   "actual_mean_min": 94.7,
+   "within_5min_%": 23.2,
+   "within_10min_%": 46.4,
+   "within_15min_%": 59.4
+  },
+  "timetable": {
+   "n": 389,
+   "MAE_min": 32.08,
+   "MAPE_%": 31.1,
+   "MedAPE_%": 25.3,
+   "within20%_%": 41.6,
+   "bias_min": -21.25,
+   "median_err_min": -12.17,
+   "actual_mean_min": 94.7,
+   "within_5min_%": 17.6,
+   "within_10min_%": 33.2,
+   "within_15min_%": 46.2
+  }
+ },
+ "by_transfers": {
+  "乗換0回": {
+   "model": {
+    "n": 166,
+    "MAE_min": 16.64,
+    "MAPE_%": 21.5,
+    "MedAPE_%": 17.2,
+    "within20%_%": 56.6,
+    "bias_min": -4.62,
+    "median_err_min": 0.88,
+    "actual_mean_min": 72.5
+   },
+   "timetable": {
+    "n": 166,
+    "MAE_min": 23.44,
+    "MAPE_%": 30.0,
+    "MedAPE_%": 24.3,
+    "within20%_%": 41.0,
+    "bias_min": -15.13,
+    "median_err_min": -8.91,
+    "actual_mean_min": 72.5
+   }
+  },
+  "乗換1回": {
+   "model": {
+    "n": 226,
+    "MAE_min": 23.86,
+    "MAPE_%": 20.3,
+    "MedAPE_%": 14.4,
+    "within20%_%": 61.1,
+    "bias_min": -8.71,
+    "median_err_min": -2.4,
+    "actual_mean_min": 111.1
+   },
+   "timetable": {
+    "n": 223,
+    "MAE_min": 38.5,
+    "MAPE_%": 31.9,
+    "MedAPE_%": 26.8,
+    "within20%_%": 42.2,
+    "bias_min": -25.81,
+    "median_err_min": -17.84,
+    "actual_mean_min": 111.2
+   }
+  }
+ },
+ "top_option_safe": {
+  "n": 351,
+  "share_of_replayable_%": 89.5,
+  "arrived_by_safe_%": 80.1,
+  "mean_safe_minus_pred_min": 31.5
+ },
+ "by_first_wait_source": {
+  "過去の実際の通過の時刻表": {
+   "n": 392,
+   "MAE_min": 20.81,
+   "MAPE_%": 20.8,
+   "MedAPE_%": 16.2,
+   "within20%_%": 59.2,
+   "bias_min": -6.98,
+   "median_err_min": -0.78,
+   "actual_mean_min": 94.7
+  }
+ },
+ "route_choice": {
+  "pairs_with_2plus_replayable": 385,
+  "model_picked_actual_fastest_%": 64.2,
+  "timetable_picked_actual_fastest_%": 60.0,
+  "model_mean_regret_min": 9.57,
+  "timetable_mean_regret_min": 12.44
+ }
+}

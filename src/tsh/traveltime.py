@@ -27,8 +27,10 @@ DEFAULT_KMH = 15.0   # どの退避先も無いときの速度
 MAX_WAIT_MIN = 30.0
 
 
-def passages_glob(days) -> str:
-    files = [(C.INTERIM / "stop_passages" / f"date={d:%Y-%m-%d}" / "part.parquet").as_posix() for d in days]
+def passages_glob(days, truth: bool = False) -> str:
+    """モデルの材料の通過（C.PASSAGES）。truth=True なら検証の正解に使う通過（C.TRUTH_PASSAGES）。"""
+    base = C.TRUTH_PASSAGES if truth else C.PASSAGES
+    files = [(base / f"date={d:%Y-%m-%d}" / "part.parquet").as_posix() for d in days]
     return "[" + ",".join(f"'{f}'" for f in files) + "]"
 
 

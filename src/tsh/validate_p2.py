@@ -3,6 +3,8 @@
 (1) 既知のパターン: 時間帯別の平均車内人数に朝・夕のピークが出るか、平日と休日で違うか。
 (2) 時間的な安定性（予測としての検証）: 10/1〜10/24 から作った推定で、10/25〜10/31 の推定を当てられるか。
     マス（路線 × 区間 × 平日/休日 × 時間帯）ごとの相関・混雑レベルの一致率を、信頼度の段階別に出す。
+    あわせて、検証期間の券を半分に分けた「ノイズの床」（完璧な予測でも出る誤差の目安）と、
+    学習期間の券の枚数の段ごとの誤差を出す（docs 15 章）。
 (3) 全体量の整合: 拡大後の1日の乗車人数を、公表されている DTC＋クラスターバスの利用者数と比べる。
 (4) 停留所の対応づけの検証: 車両番号のある券について、発券時刻のそのバスの GPS 位置と、
     名前から対応づけた乗車停留所の距離を測る（名前の照合が正しいかの独立した確認）。
@@ -18,7 +20,7 @@ import pandas as pd
 from . import common as C
 from . import crowding as K
 
-OUT = C.ROOT / "results"
+OUT = C.RESULTS
 OFFICIAL_DAILY_RIDERS = 4_141_000   # 2023年 DTC＋クラスター 41.41 lakh/日（Delhi Economic Survey 等の報道値）
 
 
@@ -28,12 +30,40 @@ def hourly_profile(a: pd.DataFrame) -> pd.DataFrame:
     return (g.wl / g.t).unstack(0).round(1)
 
 
-def stability(train: pd.DataFrame, test: pd.DataFrame) -> dict:
+def split_half(tk: pd.DataFrame, days, seed: int = 0) -> pd.DataFrame:
+    """期間の券を無作為に半分に分け、マスごとの人数 A・B を返す（ノイズの床を測るため）。
+
+    A と B は同じ平均のまわりの独立な標本なので、(A − B)/2 のばらつきは全体の推定のばらつき（券の標本誤差）と同じ大きさ。
+    median(|A − B| / (A + B)) は「完璧な予測でも、この期間の推定と比べれば出てしまう誤差」の目安になる
+    （Tichy ら 2025 の、予測ごとに理想の予測で出る指標の値と比べる考え方。experiments/p2_error/）。
+    """
+    t = tk[(tk.j > tk.i) & tk.date.isin(set(days))][["route_id", "hr", "day_type", "i", "j", "pax"]].reset_index(drop=True)
+    t["h"] = np.random.default_rng(seed).integers(0, 2, len(t))
+    con = C.connect()
+    con.register("t", t)
+    return con.execute("""
+        WITH s AS (SELECT * FROM t, range(0, 400) r(k) WHERE k >= i AND k < j)
+        SELECT route_id, k AS seq, day_type, hr,
+               sum(CASE WHEN h = 0 THEN pax ELSE 0 END) AS pa, sum(CASE WHEN h = 1 THEN pax ELSE 0 END) AS pb
+        FROM s GROUP BY ALL""").df()
+
+
+TIER_EDGES = [0, 10, 30, 100, 300, 1000, 10**9]   # 学習期間の券の枚数（区間ごとに数えた延べ）
+
+
+def stability(train: pd.DataFrame, test: pd.DataFrame, halves: pd.DataFrame | None = None) -> dict:
+    """前の期間の推定で後の期間の推定を当てる。halves（検証期間の券を半分に分けた人数）があれば、
+    ノイズの床（完璧な予測でも出る誤差の目安）と、頭打ち（1 便 100 人）の前の値での誤差も出す。
+    頭打ちの後の値では、券の多いマスは両方とも 100 人になり、誤差が機械的に 0 になる。"""
     k = ["route_id", "seq", "day_type", "hr"]
-    m = train[k + ["load", "n_tickets", "level", "confidence"]].merge(
-        test[k + ["load", "n_tickets", "level"]], on=k, suffixes=("_tr", "_te"))
+    m = train[k + ["load", "load_raw", "n_tickets", "level", "confidence"]].merge(
+        test[k + ["load", "load_raw", "n_tickets", "level"]], on=k, suffixes=("_tr", "_te"))
+    if halves is not None:
+        m = m.merge(halves, on=k, how="left")
     res = {}
     lv = {name: i for i, name in enumerate(K.LEVELS)}
+    rel = lambda x: (x.load_raw_tr - x.load_raw_te).abs() / x.load_raw_te  # noqa: E731
+    floor = lambda x: (x.pa - x.pb).abs() / (x.pa + x.pb)  # noqa: E731
     for conf in ["高", "中", "低", "全体"]:
         x = m if conf == "全体" else m[m.confidence == conf]
         x = x[x.n_tickets_te >= 5]   # 検証側も最低限の標本があるマスだけ
@@ -46,9 +76,22 @@ def stability(train: pd.DataFrame, test: pd.DataFrame) -> dict:
             "spearman_r": round(float(x.load_tr.rank().corr(x.load_te.rank())), 3),
             "MAE_people": round(float((x.load_tr - x.load_te).abs().mean()), 1),
             "median_abs_rel_err_%": round(float(((x.load_tr - x.load_te).abs() / x.load_te).median() * 100), 1),
+            "median_abs_rel_err_uncapped_%": round(float(rel(x).median() * 100), 1),
             "level_agree_%": round(float((a == b).mean() * 100), 1),
             "level_within1_%": round(float(((a - b).abs() <= 1).mean() * 100), 1),
         }
+        if halves is not None:
+            res[conf]["noise_floor_%"] = round(float(floor(x).median() * 100), 1)
+    # 学習期間の券の枚数（予測の前に分かる量）の段ごと: その枚数があると、翌週の推定とどれくらい合うか
+    x = m[m.n_tickets_te >= 5].assign(tier=pd.cut(m.n_tickets_tr, TIER_EDGES, right=False))
+    tiers = []
+    for t, g in x.groupby("tier", observed=True):
+        r = {"train_tickets": f"{t.left}–{t.right - 1 if t.right < 10**9 else ''}", "cells": int(len(g)),
+             "median_abs_rel_err_uncapped_%": round(float(rel(g).median() * 100), 1)}
+        if halves is not None:
+            r["noise_floor_%"] = round(float(floor(g).median() * 100), 1)
+        tiers.append(r)
+    res["by_train_tickets"] = tiers
     return res
 
 
@@ -106,7 +149,7 @@ def main() -> None:
 
     prof = hourly_profile(tr)
     prof.to_csv(OUT / "p2_hourly_profile.csv")
-    stab = stability(tr, te)
+    stab = stability(tr, te, split_half(tk, C.TEST_DAYS))
     ride = ridership(tk)
     gps = gps_check(tkv)
     top = top_segments(tr)

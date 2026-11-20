@@ -182,7 +182,7 @@ def main() -> None:
            "tuning": tune, "chosen_on_tuning": best, "report": report,
            "between_trip_cv_of_true_load_overall": round(cv_all, 3),
            "between_trip_cv_by_mean_bin": {str(k): {kk: round(float(vv), 3) for kk, vv in v.items()} for k, v in disp.iterrows()}}
-    (C.ROOT / "results" / "p2_trip_metrics.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+    (C.RESULTS / "p2_trip_metrics.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
     print("便ごとの本当の人数のばらつき（変動係数）:", round(cv_all, 3))
     print(disp.round(3).to_string())
 

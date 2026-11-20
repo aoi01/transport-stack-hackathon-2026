@@ -196,7 +196,7 @@ class TestFeatures:
 
 def evaluate(models: dict) -> dict:
     var = Variants()
-    s = pd.read_csv(C.ROOT / "results" / "p1_ride_samples.csv", parse_dates=["t_i", "t_j"], dtype={"route_id": str})
+    s = pd.read_csv(C.RESULTS / "p1_ride_samples.csv", parse_dates=["t_i", "t_j"], dtype={"route_id": str})
     s = s[s.route_id.isin(var.ids.keys())].reset_index(drop=True)
     tf = TestFeatures()
     t_ep = (s.t_i.dt.tz_localize(C.TZ).dt.tz_convert("UTC").astype("int64") // 10**9).to_numpy()
@@ -219,7 +219,7 @@ def evaluate(models: dict) -> dict:
             print(f"  評価 {n:,}/{len(s):,}", flush=True)
     res = {name: metrics(s.actual_s, p) for name, p in preds.items()}
     s = s.assign(**{f"pred_{k}": v for k, v in preds.items()})
-    s.to_csv(C.ROOT / "results" / "p1_ml_samples.csv", index=False)
+    s.to_csv(C.RESULTS / "p1_ml_samples.csv", index=False)
     return res
 
 
@@ -342,9 +342,9 @@ def main_fair() -> None:
         res = evaluate(models)
     finally:
         TestFeatures = orig
-    prev = json.loads((C.ROOT / "results" / "p1_ml_metrics.json").read_text(encoding="utf-8"))
+    prev = json.loads((C.RESULTS / "p1_ml_metrics.json").read_text(encoding="utf-8"))
     prev.update(res)
-    (C.ROOT / "results" / "p1_ml_metrics.json").write_text(json.dumps(prev, ensure_ascii=False, indent=1), encoding="utf-8")
+    (C.RESULTS / "p1_ml_metrics.json").write_text(json.dumps(prev, ensure_ascii=False, indent=1), encoding="utf-8")
     for k, v in res.items():
         print(k, v)
 
@@ -360,10 +360,10 @@ def main() -> None:
     m2 = train(df, FEATS, "with_recent")
     imp = dict(zip(FEATS, m2.feature_importance("gain").round(0).tolist()))
     res = evaluate({"LightGBM（過去のみ）": (m1, no_recent), "LightGBM（過去＋直近）": (m2, FEATS)})
-    base = json.loads((C.ROOT / "results" / "p1_improve_metrics.json").read_text(encoding="utf-8"))
+    base = json.loads((C.RESULTS / "p1_improve_metrics.json").read_text(encoding="utf-8"))
     out = {"集計 V0（最初の版）": base["V0"], f"集計＋直前のバス補正 {base['best']}": base[base["best"]], **res,
            "feature_importance_gain": imp}
-    (C.ROOT / "results" / "p1_ml_metrics.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+    (C.RESULTS / "p1_ml_metrics.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
     for k, v in out.items():
         print(k, v)
 

@@ -127,3 +127,161 @@ class WaitModel:
         if cond is not None:
             return cond, f"前のバスが {e / 60:.0f} 分前に通過"
         return None, None
+
+
+class PassageTimetable:
+    """事前計画（リアルタイムを使わない）の待ち時間: 「実際の通過の時刻表」（docs 14章の W11）。
+
+    指定した日の GPS で、各停留所をバスが実際に通った時刻を、路線 × 停留所 × 平日/休日 ごとに並べておく。
+    出発時刻 t の待ち時間 = 同じ平日/休日の各日について「t 以降に次のバスが通るまでの時間」（4 時間以内）の中央値。
+    3 日分以上なければ None（呼び出し側は過去の到着間隔の E[H²]/(2E[H]) を使う）。
+    検証（10/25〜31、3,000 件、学習は 10/1〜24）で事前計画の待ち時間の誤差中央値 58.7% → 49.5%（−9.2 ポイント）。
+    土曜を日曜と分けると悪化した（土曜が 4 日しかない）。
+    """
+
+    # 再現の出発を ±この秒数だけ 2 分おきにずらしてまとめる（docs 17章。較正の週で 0・5・10 分を比べて決めた）
+    jitter_s = 600.0
+
+    def __init__(self, days):
+        con = C.connect()
+        con.register("dd", pd.DataFrame({"date": days, "k": range(len(days)), "dt": [C.day_type(d) for d in days]}))
+        df = con.execute(f"""
+            SELECT CAST(p.route_id AS VARCHAR) AS route_id, p.seq, dd.dt,
+                   CAST(dd.k * 86400 + hour(timezone('{C.TZ}', p.ts)) * 3600 + minute(timezone('{C.TZ}', p.ts)) * 60
+                        + second(timezone('{C.TZ}', p.ts)) AS INTEGER) AS v
+            FROM read_parquet({passages_glob(days)}) p JOIN dd ON dd.date = p.date
+            ORDER BY 1, 2, 3, 4""").df()
+        self.v = df.v.to_numpy()
+        g = df.groupby(["route_id", "seq", "dt"], sort=False).size()
+        ends = np.cumsum(g.to_numpy())
+        self.idx = {k: (int(e - n), int(e)) for k, n, e in zip(g.index, g.to_numpy(), ends)}
+        self.days_of = {dt: [k for k, d in enumerate(days) if C.day_type(d) == dt] for dt in ("weekday", "weekend")}
+
+    def wait(self, rid: str, i: int, t: datetime):
+        dt = C.day_type(t.date())
+        se = self.idx.get((str(rid), int(i), dt))
+        if se is None:
+            return None
+        x = self.v[se[0]:se[1]]
+        sec = t.hour * 3600 + t.minute * 60 + t.second
+        gaps = []
+        for k in self.days_of[dt]:
+            p = np.searchsorted(x, k * 86400 + sec)
+            if p < len(x) and x[p] < (k + 1) * 86400 and x[p] - (k * 86400 + sec) <= 4 * 3600:
+                gaps.append(x[p] - (k * 86400 + sec))
+        return float(np.median(gaps)) if len(gaps) >= 3 else None
+
+    def _next(self, rid, i, dt, k, sec):
+        se = self.idx.get((str(rid), int(i), dt))
+        if se is None:
+            return None
+        x = self.v[se[0]:se[1]]
+        p = np.searchsorted(x, k * 86400 + sec)
+        if p < len(x) and x[p] < (k + 1) * 86400 and x[p] - (k * 86400 + sec) <= 4 * 3600:
+            return float(x[p] - k * 86400)
+        return None
+
+    def _prev(self, rid, i, dt, k, sec):
+        """日 k に停留所 i を sec 以前に最後に通ったバスの時刻（その日の 0 時からの秒）。無ければ None。"""
+        se = self.idx.get((str(rid), int(i), dt))
+        if se is None:
+            return None
+        x = self.v[se[0]:se[1]]
+        p = np.searchsorted(x, k * 86400 + sec, side="right") - 1
+        if p >= 0 and x[p] >= k * 86400:
+            return float(x[p] - k * 86400)
+        return None
+
+    def latest_departures(self, legs, target: datetime, walk_last_s: float, max_total_s: float = 4 * 3600):
+        """到着時刻を指定する検索（docs 16.9）: 同じ平日/休日の過去の各日について、target までに着ける最も遅い出発
+        （その日の 0 時からの秒）。journey を後ろからたどる: 最後の乗車は「target − 最後の徒歩 − 乗車時間」以前に
+        その停留所を最後に通ったバスに乗ったことにし、乗り換えも同じようにさかのぼる。乗車時間を固定すると、遅く出るほど
+        遅く着く（先に出たバスを後のバスが追い越さない）ので、その日はこの出発までに出れば target までに着く。
+        max_total_s より前に出ないと着けない日と、バスが無い日は -inf。同じ平日/休日の日が 3 日未満なら None。
+        legs は journey と同じ [(route_id, 乗車 seq, 乗る前の徒歩の秒, 乗車時間の秒), ...]。"""
+        dt = C.day_type(target.date())
+        sec_t = target.hour * 3600 + target.minute * 60 + target.second
+        out = []
+        for k in self.days_of[dt]:
+            s = sec_t - walk_last_s
+            for rid, i, walk_s, ride_s in reversed(legs):
+                b = self._prev(rid, i, dt, k, s - ride_s)
+                if b is None:
+                    s = -np.inf
+                    break
+                s = b - walk_s
+            out.append(s if sec_t - s <= max_total_s else -np.inf)
+        if len(out) < 3:
+            return None
+        return np.asarray(out, float)
+
+    def journey(self, legs, t: datetime, walk_last_s: float):
+        """経路全体を、同じ平日/休日の過去の各日に「同じ時刻に出ていたら」で辿った合計の中央値（docs 16章）。
+
+        legs: [(route_id, 乗車 seq, 乗る前の徒歩の秒, 乗車時間の秒), ...]。各日 k について、歩いて停留所に着いた時刻以降に
+        その日実際に最初に通ったバスに乗り、乗車時間（モデルの中央値）を足し、乗り換えも同じように辿る。
+        4 時間以内にバスが来なかった日は「着けなかった日」として inf で中央値に入れる（半分以上の日に着けなければ inf）。
+        今の待ちの予測（wait）は来なかった日を捨てるので、めったに走らない路線の待ちを短く見積もり、
+        経路検索でそれが 1 位に選ばれていた（検証週に 1 位の案の 38% でバスが来なかった）。
+        その停留所でバスの通過が一度も記録されていない（路線・停留所・平日/休日）は、どの日も着けなかったとみなす。
+        返り値: {"median_s", "q85_s", "served"（着けた日の割合）, "days", "tot"（日ごとの合計の秒、着けない日は inf）}。
+        同じ平日/休日の日が 3 日未満なら None。
+        """
+        if getattr(self, "jitter_s", 0) > 0:
+            # 出発を ±jitter_s の範囲で 2 分おきにずらした再現もまとめる（docs 17章）。ちょうどその分に過去の日のバスが
+            # 来ていた案が「待ちが短い」と選ばれ、検証の日には外れる（選んだことによる偏り）のを和らげる
+            off = np.arange(-self.jitter_s, self.jitter_s + 1, 120, dtype=float)
+            m = self.journey_many(legs, t, off, walk_last_s)
+            if m is None:
+                return None
+            tot = (m - off[:, None]).ravel()
+            return {"median_s": float(np.median(tot)), "q85_s": float(np.quantile(tot, 0.85, method="higher")),
+                    "served": float(np.isfinite(tot).mean()), "days": int(m.shape[1]), "tot": tot}
+        dt = C.day_type(t.date())
+        sec0 = t.hour * 3600 + t.minute * 60 + t.second
+        tot = []
+        for k in self.days_of[dt]:
+            s = sec0
+            for rid, i, walk_s, ride_s in legs:
+                s += walk_s
+                b = self._next(rid, i, dt, k, s)
+                if b is None:
+                    s = np.inf
+                    break
+                s = b + ride_s
+            tot.append(s + walk_last_s - sec0)
+        if len(tot) < 3:
+            return None
+        tot = np.asarray(tot, float)
+        # 85% 点（余裕を見た時間）。検証週の 1 位の案で、実際にこの内に着いたのは 85.1%（docs 16章）
+        return {"median_s": float(np.median(tot)), "q85_s": float(np.quantile(tot, 0.85, method="higher")),
+                "served": float(np.isfinite(tot).mean()), "days": int(len(tot)), "tot": tot}
+
+    def journey_many(self, legs, t: datetime, offsets_s, walk_last_s: float):
+        """journey と同じ再現を、出発を offsets_s（秒の配列、inf も可）だけずらした何通りかでまとめて行う（docs 16.6・16.7）。
+        返り値: [ずらし方, 日] の合計の秒（t から測る。着けない日は inf）。同じ平日/休日の日が 3 日未満なら None。"""
+        dt = C.day_type(t.date())
+        days = self.days_of[dt]
+        if len(days) < 3:
+            return None
+        off = np.asarray(offsets_s, float)
+        sec0 = t.hour * 3600 + t.minute * 60 + t.second
+        out = np.full((len(off), len(days)), np.inf)
+        fin = np.isfinite(off)
+        for c, k in enumerate(days):
+            s = sec0 + off[fin]
+            for rid, i, walk_s, ride_s in legs:
+                s = s + walk_s
+                se = self.idx.get((str(rid), int(i), dt))
+                if se is None:
+                    s = np.full_like(s, np.inf)
+                    break
+                x = self.v[se[0]:se[1]]
+                q = k * 86400 + s
+                ok = np.isfinite(q)
+                p = np.searchsorted(x, np.where(ok, q, 0))
+                nxt = np.where(p < len(x), x[np.minimum(p, len(x) - 1)], np.inf)
+                good = ok & (p < len(x)) & (nxt < (k + 1) * 86400) & (nxt - q <= 4 * 3600)
+                s = np.where(good, nxt - k * 86400 + ride_s, np.inf)
+            out[fin, c] = s + walk_last_s - sec0
+        return out

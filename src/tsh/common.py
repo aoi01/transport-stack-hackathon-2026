@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+import os
 from datetime import date
 from functools import lru_cache
 from pathlib import Path
@@ -15,10 +16,20 @@ GTFS = ROOT / "data/raw/gtfs_static"
 GPS = ROOT / "data/interim/bus_gps"
 TICKETS = ROOT / "data/raw/ticketing/October-Delhi.csv"
 INTERIM = ROOT / "data/interim"
-PROCESSED = ROOT / "data/processed"
+# 停留所の通過の作り方を切り替える（docs 17章）。stop_passages = tsh.passages（60m 以内で最も近い点）、
+# stop_passages_v2 = tsh.passages_v2（路線に投影して補間）。モデルの材料（PASSAGES）と検証の正解（TRUTH_PASSAGES）を別に選べる
+# 既定は補間版（docs 17章で比べて採用）。旧版は TSH_PASSAGES=stop_passages TSH_PROCESSED=data/processed で動く
+PASSAGES = INTERIM / os.environ.get("TSH_PASSAGES", "stop_passages_v2")
+TRUTH_PASSAGES = INTERIM / os.environ.get("TSH_TRUTH_PASSAGES", os.environ.get("TSH_PASSAGES", "stop_passages_v2"))
+PROCESSED = ROOT / os.environ.get("TSH_PROCESSED", "data/processed_v2")
+RESULTS = ROOT / os.environ.get("TSH_RESULTS", "results")
 TZ = "Asia/Kolkata"
 
 # 学習期間と検証期間（時系列で分ける：最後の1週間を検証に使う）
+# 手前を走るバスの到着予測が、利用者が停留所に着く時刻よりこれだけ前（秒）までなら「乗れる」とみなす（docs 16.7）。
+# 較正の週（10/18〜24）で、着く 30〜60 秒前と予測したバスは 59% で乗り遅れた（0〜30 秒前は 40%）。以前は -60
+CATCH_MIN_S = -30
+
 TRAIN_DAYS = [date(2026, 10, d) for d in range(1, 25)]   # 10/1〜10/24
 TEST_DAYS = [date(2026, 10, d) for d in range(25, 32)]   # 10/25〜10/31
 # 祝日（平日扱いにしない）。10/2 はガンディー生誕記念日（全国の祝日）

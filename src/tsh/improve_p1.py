@@ -182,7 +182,7 @@ def main() -> None:
     sys.stdout.reconfigure(encoding="utf-8")
     build_tables()
     var = Variants()
-    s = pd.read_csv(C.ROOT / "results" / "p1_ride_samples.csv", parse_dates=["t_i", "t_j"], dtype={"route_id": str})
+    s = pd.read_csv(C.RESULTS / "p1_ride_samples.csv", parse_dates=["t_i", "t_j"], dtype={"route_id": str})
     s = s[s.route_id.isin(var.ids.keys())].reset_index(drop=True)
     res, preds = {}, {}
     for v in ["V0", "V1", "V2", "V3"]:
@@ -218,7 +218,7 @@ def main() -> None:
     by = {p: {"V0": metrics(g.actual_s, g.V0), best: metrics(g.actual_s, g.best)} for p, g in s.groupby("period")}
     res["best"] = best
     res["by_period"] = by
-    (C.ROOT / "results" / "p1_improve_metrics.json").write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
+    (C.RESULTS / "p1_improve_metrics.json").write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
     print("best:", best)
     print(json.dumps(by, ensure_ascii=False))
 

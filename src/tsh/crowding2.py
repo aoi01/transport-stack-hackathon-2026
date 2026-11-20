@@ -93,7 +93,7 @@ class CrowdingModel2:
         mix = route_fleet_mix().set_index("route_id").cng_share
         self.mix = mix.to_dict()
         # 便ごとのばらつき（変動係数）を平均の大きさ別に（tsh.p2_trip）
-        p = C.ROOT / "results" / "p2_trip_metrics.json"
+        p = C.RESULTS / "p2_trip_metrics.json"
         self.cv_table = None
         if cv is None and p.exists():
             m = json.loads(p.read_text(encoding="utf-8"))

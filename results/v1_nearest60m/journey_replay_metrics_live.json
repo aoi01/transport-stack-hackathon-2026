@@ -1,0 +1,138 @@
+{
+ "pairs": 600,
+ "top_option_replayable": 378,
+ "top_option_status_%": {
+  "ok": 63.0,
+  "nobus": 13.7,
+  "untracked": 23.3
+ },
+ "top_option_accuracy": {
+  "model": {
+   "n": 378,
+   "MAE_min": 20.14,
+   "MAPE_%": 19.7,
+   "MedAPE_%": 13.9,
+   "within20%_%": 61.9,
+   "bias_min": -6.05,
+   "median_err_min": -0.03,
+   "actual_mean_min": 95.8,
+   "within_5min_%": 27.8,
+   "within_10min_%": 48.9,
+   "within_15min_%": 61.9
+  },
+  "timetable": {
+   "n": 365,
+   "MAE_min": 34.82,
+   "MAPE_%": 35.4,
+   "MedAPE_%": 25.7,
+   "within20%_%": 40.0,
+   "bias_min": -17.37,
+   "median_err_min": -10.15,
+   "actual_mean_min": 95.5,
+   "within_5min_%": 18.0,
+   "within_10min_%": 30.4,
+   "within_15min_%": 39.9
+  }
+ },
+ "by_transfers": {
+  "乗換0回": {
+   "model": {
+    "n": 157,
+    "MAE_min": 16.72,
+    "MAPE_%": 19.7,
+    "MedAPE_%": 12.2,
+    "within20%_%": 61.1,
+    "bias_min": -6.3,
+    "median_err_min": -0.72,
+    "actual_mean_min": 72.2
+   },
+   "timetable": {
+    "n": 152,
+    "MAE_min": 27.45,
+    "MAPE_%": 37.2,
+    "MedAPE_%": 23.6,
+    "within20%_%": 40.8,
+    "bias_min": -12.59,
+    "median_err_min": -6.24,
+    "actual_mean_min": 72.5
+   }
+  },
+  "乗換1回": {
+   "model": {
+    "n": 221,
+    "MAE_min": 22.56,
+    "MAPE_%": 19.6,
+    "MedAPE_%": 14.6,
+    "within20%_%": 62.4,
+    "bias_min": -5.88,
+    "median_err_min": 2.33,
+    "actual_mean_min": 112.5
+   },
+   "timetable": {
+    "n": 213,
+    "MAE_min": 40.07,
+    "MAPE_%": 34.0,
+    "MedAPE_%": 28.5,
+    "within20%_%": 39.4,
+    "bias_min": -20.79,
+    "median_err_min": -15.02,
+    "actual_mean_min": 112.0
+   }
+  }
+ },
+ "top_option_safe": {
+  "n": 312,
+  "share_of_replayable_%": 82.5,
+  "arrived_by_safe_%": 84.3,
+  "mean_safe_minus_pred_min": 30.6
+ },
+ "by_first_wait_source": {
+  "リアルタイム（手前を走るバス）": {
+   "n": 257,
+   "MAE_min": 15.04,
+   "MAPE_%": 17.0,
+   "MedAPE_%": 12.0,
+   "within20%_%": 67.3,
+   "bias_min": -6.15,
+   "median_err_min": -0.72,
+   "actual_mean_min": 79.8
+  },
+  "折り返してくるバス＋前のバスからの経過": {
+   "n": 2,
+   "MAE_min": 50.72,
+   "MAPE_%": 32.6,
+   "MedAPE_%": 32.6,
+   "within20%_%": 0.0,
+   "bias_min": -23.43,
+   "median_err_min": -23.43,
+   "actual_mean_min": 147.1
+  },
+  "折り返してくるバス＋前のバスからの経過＋実際の発車の時刻表": {
+   "n": 67,
+   "MAE_min": 31.61,
+   "MAPE_%": 21.4,
+   "MedAPE_%": 19.7,
+   "within20%_%": 50.7,
+   "bias_min": -11.42,
+   "median_err_min": 2.15,
+   "actual_mean_min": 143.0
+  },
+  "次のバスは始発を出る前（実際の発車の時刻表）": {
+   "n": 52,
+   "MAE_min": 29.35,
+   "MAPE_%": 30.0,
+   "MedAPE_%": 17.5,
+   "within20%_%": 51.9,
+   "bias_min": 1.98,
+   "median_err_min": 3.42,
+   "actual_mean_min": 111.8
+  }
+ },
+ "route_choice": {
+  "pairs_with_2plus_replayable": 363,
+  "model_picked_actual_fastest_%": 66.7,
+  "timetable_picked_actual_fastest_%": 60.1,
+  "model_mean_regret_min": 8.77,
+  "timetable_mean_regret_min": 11.75
+ }
+}
