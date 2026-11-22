@@ -1,0 +1,123 @@
+{
+ "pairs": 1000,
+ "base": {
+  "n": 1000,
+  "replayable": 650,
+  "status_%": {
+   "ok": 65.0,
+   "nobus": 12.8,
+   "untracked": 22.2
+  },
+  "actual_min_median": 86.9,
+  "actual_min_mean": 98.0,
+  "abs_err_min_median": 11.2,
+  "ape_median_%": 14.3,
+  "walk0_min_median": 1.5,
+  "wait0_act_min_median": 9.1,
+  "wait0_act_min_mean": 20.9,
+  "wait0_abs_err_min_median": 2.6,
+  "wait0_missed_5min_%": 20.7,
+  "arrived_by_safe_%": 79.1
+ },
+ "xfer": {
+  "n": 1000,
+  "replayable": 651,
+  "status_%": {
+   "ok": 65.1,
+   "nobus": 12.8,
+   "untracked": 22.1
+  },
+  "actual_min_median": 87.0,
+  "actual_min_mean": 98.0,
+  "abs_err_min_median": 11.0,
+  "ape_median_%": 13.5,
+  "walk0_min_median": 1.5,
+  "wait0_act_min_median": 9.2,
+  "wait0_act_min_mean": 21.0,
+  "wait0_abs_err_min_median": 2.6,
+  "wait0_missed_5min_%": 20.9,
+  "arrived_by_safe_%": 78.9
+ },
+ "新しい版で乗り換えに見えているバスを使った組": {
+  "n": 45,
+  "base": {
+   "n": 45,
+   "replayable": 33,
+   "status_%": {
+    "ok": 73.3,
+    "nobus": 2.2,
+    "untracked": 24.4
+   },
+   "actual_min_median": 59.3,
+   "actual_min_mean": 58.7,
+   "abs_err_min_median": 8.1,
+   "ape_median_%": 17.1,
+   "walk0_min_median": 0.2,
+   "wait0_act_min_median": 3.3,
+   "wait0_act_min_mean": 4.8,
+   "wait0_abs_err_min_median": 0.8,
+   "wait0_missed_5min_%": 6.8,
+   "arrived_by_safe_%": 96.8
+  },
+  "xfer": {
+   "n": 45,
+   "replayable": 34,
+   "status_%": {
+    "ok": 75.6,
+    "nobus": 2.2,
+    "untracked": 22.2
+   },
+   "actual_min_median": 55.5,
+   "actual_min_mean": 60.9,
+   "abs_err_min_median": 3.7,
+   "ape_median_%": 9.9,
+   "walk0_min_median": 0.0,
+   "wait0_act_min_median": 3.6,
+   "wait0_act_min_mean": 4.5,
+   "wait0_abs_err_min_median": 0.8,
+   "wait0_missed_5min_%": 9.1,
+   "arrived_by_safe_%": 94.1
+  }
+ },
+ "見えているバスを使った乗り換えの乗車時刻（実際−予測）": {
+  "n": 44,
+  "誤差の絶対値_中央値_分": 2.8,
+  "中央値_分": 2.7,
+  "10分以上ずれた_%": 18.2
+ },
+ "両方再現できた組（全部）": {
+  "n": 649,
+  "誤差の絶対値_中央値_分（今 / 新）": [
+   11.3,
+   11.0
+  ],
+  "誤差の絶対値_平均_分（今 / 新）": [
+   21.6,
+   21.6
+  ],
+  "予測−実際_中央値_分（今 / 新）": [
+   -2.3,
+   -2.6
+  ],
+  "実際の所要時間の差_平均_分（新 − 今）": 0.03,
+  "実際の所要時間の差_中央値_分（新 − 今）": 0.0
+ },
+ "両方再現できた組（使った組）": {
+  "n": 32,
+  "誤差の絶対値_中央値_分（今 / 新）": [
+   8.4,
+   4.2
+  ],
+  "誤差の絶対値_平均_分（今 / 新）": [
+   11.7,
+   10.1
+  ],
+  "予測−実際_中央値_分（今 / 新）": [
+   5.1,
+   0.1
+  ],
+  "実際の所要時間の差_平均_分（新 − 今）": 1.61,
+  "実際の所要時間の差_中央値_分（新 − 今）": 0.0
+ },
+ "1位の案が変わった組_%": 2.0
+}

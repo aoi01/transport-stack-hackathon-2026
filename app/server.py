@@ -34,6 +34,7 @@ from tsh.live_excess import load as live_wait_excess  # noqa: E402
 from tsh.waitmodel import PassageTimetable, WaitModel  # noqa: E402
 
 from app.viz import router as viz_router  # noqa: E402  停留所の通過を確かめる画面（/passages）
+from app import i18n  # noqa: E402  説明文を英語にする（lang=en、既定）
 
 IST = timezone(timedelta(hours=5, minutes=30))
 app = FastAPI(title="Delhi bus journey planner (Transport Stack Hackathon 2026)",
@@ -85,17 +86,19 @@ def journeys(from_: str = Query(..., alias="from", examples=["28.6676,77.2285"])
                                         "85% で間に合う最も遅い出発を返す（depart より優先、リアルタイムは使わない）"),
              sort: str = Query("fastest", pattern="^(fastest|comfort|fewer_transfers)$"),
              realtime: bool = Query(True, description="出発が今から15分以内なら GTFS-RT で待ち時間を出す"),
-             n: int = Query(3, ge=1, le=6)):
+             n: int = Query(3, ge=1, le=6),
+             lang: str = Query("en", pattern="^(en|ja)$", description="説明文の言語（en / ja）")):
     o, d = _pt(from_), _pt(to)
+    tr = i18n.response if lang == "en" else (lambda x: x)
     if arrive:
-        return planner.plan_arrive(o[0], o[1], d[0], d[1], datetime.fromisoformat(arrive), sort=sort, max_options=n)
+        return tr(planner.plan_arrive(o[0], o[1], d[0], d[1], datetime.fromisoformat(arrive), sort=sort, max_options=n))
     t = datetime.fromisoformat(depart) if depart else datetime.now(IST).replace(tzinfo=None, microsecond=0)
     res = planner.plan(o[0], o[1], d[0], d[1], t, sort=sort, max_options=n,
                        live_wait=live.wait_fn(wait_model=wait_model, live_links=live_links) if realtime else None,
                        live_links=live_links if realtime else None)
     res["realtime_feed"] = {"time": live.feed_time.isoformat() if live.feed_time else None, "error": live.error}
     res["live_links"] = live_links.stats
-    return res
+    return tr(res)
 
 
 @app.get("/live")

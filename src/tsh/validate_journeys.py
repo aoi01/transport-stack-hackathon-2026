@@ -217,6 +217,32 @@ class SimLive:
             return (w, src) if w is not None else None
         return f
 
+    def transfer_fn(self, d, now: datetime, max_lead_s: float = 1200.0):
+        """planner.plan(live_transfer=...) に渡す関数。乗り換えの停留所に着く予測の時刻 t が出発から max_lead_s 以内で、
+        出発の時点で手前を走る 2 本目の路線のバスが見えていれば、t 以降（CATCH_MIN_S まで）に来る最初のバスの待ち。
+        検証週の 1000 組で、乗り換えまで 20 分以内なら乗車時刻の誤差の中央値が 7.3 → 2.9 分、20 分より先は良くならなかった
+        （experiments/p1_passages/alt_eval.py）。"""
+        now_ep = pd.Timestamp(now, tz=C.TZ).timestamp()
+        routes = _Routes(self, d, now_ep)
+        P = self.P
+
+        def f(route_id: str, i: int, t: datetime):
+            if (t - now).total_seconds() > max_lead_s:
+                return None
+            xy = P.seq_xy[route_id]
+            best = None
+            for lat, lng, ts in routes.get(str(route_id)) or []:
+                dd = C.dist_m(lat, lng, xy[:, 0], xy[:, 1])
+                k = int(np.argmin(dd))
+                if dd[k] > 300 or k >= i:
+                    continue
+                t_k = datetime.fromtimestamp(ts, timezone(timedelta(hours=5, minutes=30))).replace(tzinfo=None)
+                w = (t_k + timedelta(seconds=P.tt.ride_sec(route_id, k, i, t_k)) - t).total_seconds()
+                if w >= C.CATCH_MIN_S and (best is None or w < best):
+                    best = max(w, 0.0)
+            return (best, "リアルタイム（乗り換えの手前を走るバス）") if best is not None else None
+        return f
+
 
 def replay_option(rp: Replay, opt: dict, d, t0: float):
     return replay_option_status(rp, opt, d, t0)[0]

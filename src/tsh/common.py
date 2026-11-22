@@ -19,8 +19,12 @@ INTERIM = ROOT / "data/interim"
 # 停留所の通過の作り方を切り替える（docs 17章）。stop_passages = tsh.passages（60m 以内で最も近い点）、
 # stop_passages_v2 = tsh.passages_v2（路線に投影して補間）。モデルの材料（PASSAGES）と検証の正解（TRUTH_PASSAGES）を別に選べる
 # 既定は補間版（docs 17章で比べて採用）。旧版は TSH_PASSAGES=stop_passages TSH_PROCESSED=data/processed で動く
+# stop_passages_v3 = tsh.passages_term（v2 に、終点の手前で途切れた便の残りの停留所を足したもの）。
+# 検証の正解の既定は v3（v2 では「見えているバスが乗る停留所まで来なかった」の約半分が終点の取りこぼしだった。
+# 2026-11-22）。モデルの材料は v2 のまま（data/processed_v2 は v2 から作ってある）。
+# TSH_PASSAGES を指定したときは、正解もそれに合わせる（旧版との比べ直し用）
 PASSAGES = INTERIM / os.environ.get("TSH_PASSAGES", "stop_passages_v2")
-TRUTH_PASSAGES = INTERIM / os.environ.get("TSH_TRUTH_PASSAGES", os.environ.get("TSH_PASSAGES", "stop_passages_v2"))
+TRUTH_PASSAGES = INTERIM / os.environ.get("TSH_TRUTH_PASSAGES", os.environ.get("TSH_PASSAGES", "stop_passages_v3"))
 PROCESSED = ROOT / os.environ.get("TSH_PROCESSED", "data/processed_v2")
 RESULTS = ROOT / os.environ.get("TSH_RESULTS", "results")
 TZ = "Asia/Kolkata"

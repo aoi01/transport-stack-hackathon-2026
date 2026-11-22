@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="ja">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>停留所の通過を確かめる</title>
+<title>Stop passage inspector</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
   :root { --fg:#1d2433; --muted:#667085; --line:#e4e7ec; --soft:#f5f7fa; --pass:#1a7f4b; --order:#b7791f; --none:#c0392b; --sel:#e07a3a; --accent:#2457c5; --same:#2457c5; --opp:#7a4cc2; }
@@ -58,54 +58,54 @@
 <body>
 <div class="wrap">
 <aside>
-  <h1>停留所の通過を確かめる</h1>
-  <div class="sub">バスの GPS（2026年10月）から「どのバスが、どの停留所を、何時に通ったか」を検出した結果を地図で見ます。選んだ1便を詳しく見ながら、同じ系統の全バス（上り・下り）を同じ時刻で動かせます。<a href="/">← 経路検索に戻る</a></div>
-  <div id="overview" class="hint">検出の規模を読み込み中…</div>
-  <div class="hint"><b>判定のしかた</b>：GPS の点（約11秒おき）のうち、停留所から 60m 以内に来た点の中で最も近い点の時刻を「通過」とします。停留所の順番どおりに時刻が増えない通過（GPS の乱れ・折り返し・同じ停留所の再通過）は除き、5停留所未満しか検出できない便は使いません。ここで出した停留所間の時間が、乗車時間の予測の材料になります。</div>
+  <h1>Stop passage inspector</h1>
+  <div class="sub">Which bus passed which stop, and when — detected from bus GPS (Oct 2026). Inspect one trip in detail while every bus of the same line (both directions) moves on the map at the same time. <a href="/">← Back to the journey planner</a></div>
+  <div id="overview" class="hint">Loading coverage…</div>
+  <div class="hint"><b>How a passage is detected (this view)</b>: among GPS points (about every 11 s) within 60 m of a stop, the time of the closest one is the passage. Passages out of stop order (GPS noise, turning back, revisits) are dropped, and trips with fewer than 5 stops detected are not used. The planner itself fills the remaining stops by projecting GPS onto the route and interpolating (96% of passages).</div>
   <div class="row">
-    <div><label>路線を探す</label><input id="rq" placeholder="例: 764, 534, Nehru Place"></div>
-    <div style="flex:.8"><label>日付</label><select id="date"></select></div>
+    <div><label>Find a route</label><input id="rq" placeholder="e.g. 764, 534, Nehru Place"></div>
+    <div style="flex:.8"><label>Date</label><select id="date"></select></div>
   </div>
-  <label>路線</label><select id="route"></select>
-  <h2>便 <span id="tripcount" class="muted"></span></h2>
+  <label>Route</label><select id="route"></select>
+  <h2>Trips <span id="tripcount" class="muted"></span></h2>
   <div id="trips" class="box"></div>
   <div id="status"></div>
-  <h2>選んだ便</h2>
-  <div id="summary" class="muted">便を選んでください。</div>
+  <h2>Selected trip</h2>
+  <div id="summary" class="muted">Select a trip.</div>
   <div class="legend">
-    <div><span class="sw" style="background:var(--pass)"></span>通過を検出（60m 以内で最も近い点の時刻）</div>
-    <div><span class="sw" style="background:var(--order)"></span>近くを通ったが、順番の確認で除外</div>
-    <div><span class="sw" style="background:var(--none)"></span>60m 以内に GPS の点がない</div>
-    <div><span class="sw" style="background:linear-gradient(90deg,#8fb8ff,#1b2f73)"></span>GPS の点（薄い色ほど早い時刻）</div>
-    <div><span class="ln" style="border-top:2px dashed var(--pass)"></span>停留所と、通過とみなした点を結ぶ線</div>
-    <div><span class="dot" style="background:var(--sel)"></span>選んだ便のバス（再生の時刻の位置）</div>
-    <div><span class="dot" style="background:var(--same)"></span>同じ向きのほかのバス（クリックでその便を選ぶ）</div>
-    <div><span class="dot" style="background:var(--opp)"></span>逆向きのバス（クリックで逆向きの路線に切り替える）</div>
+    <div><span class="sw" style="background:var(--pass)"></span>Passage detected (closest point within 60 m)</div>
+    <div><span class="sw" style="background:var(--order)"></span>Passed nearby but dropped by the stop-order check</div>
+    <div><span class="sw" style="background:var(--none)"></span>No GPS point within 60 m</div>
+    <div><span class="sw" style="background:linear-gradient(90deg,#8fb8ff,#1b2f73)"></span>GPS points (lighter = earlier)</div>
+    <div><span class="ln" style="border-top:2px dashed var(--pass)"></span>Line from the stop to the point taken as its passage</div>
+    <div><span class="dot" style="background:var(--sel)"></span>Selected bus (position at the playback time)</div>
+    <div><span class="dot" style="background:var(--same)"></span>Other buses, same direction (click to select)</div>
+    <div><span class="dot" style="background:var(--opp)"></span>Buses in the opposite direction (click to switch route)</div>
   </div>
-  <h2>停留所ごとの判定</h2>
-  <div class="muted">行をクリックすると、地図がその停留所に寄り、再生位置がその時刻に移ります。「点なし」の行の距離は、最も近い GPS の点までの距離です。「この日の全便」は、その日にこの停留所の前と後の両方で通過を検出した便（＝ここを確実に通った便）のうち、ここでも通過を検出できた便の割合です。</div>
+  <h2>Stop by stop</h2>
+  <div class="muted">Click a row to zoom to the stop and move playback to that time. For "no point" rows the distance is to the nearest GPS point. "All trips today" is the share of trips detected both before and after this stop (so they surely passed it) that were also detected here.</div>
   <div id="stops"></div>
 </aside>
 <main>
   <div id="map"></div>
   <div id="chartbox">
     <div class="tool">
-      <button id="play">▶ 再生</button>
-      <select id="speed"><option value="30">30倍速</option><option value="60" selected>60倍速</option><option value="180">180倍速</option><option value="600">600倍速</option></select>
+      <button id="play">▶ Play</button>
+      <select id="speed"><option value="30">30×</option><option value="60" selected>60×</option><option value="180">180×</option><option value="600">600×</option></select>
       <input id="slider" type="range" min="0" max="1" step="1" value="0">
       <span id="tlabel">--:--:--</span>
       <span id="passed" class="muted"></span>
-      <select id="range"><option value="trip">この便の前後45分</option><option value="day">1日全体（5〜24時）</option></select>
-      <label class="key" style="margin:0"><input id="sched" type="checkbox" checked style="width:auto">時刻表</label>
-      <select id="fleet"><option value="both" selected>地図に全バス（上り・下り）</option><option value="same">地図に同じ向きの全バス</option><option value="one">地図は選んだ便だけ</option></select>
+      <select id="range"><option value="trip">This trip ±45 min</option><option value="day">Whole day (05–24 h)</option></select>
+      <label class="key" style="margin:0"><input id="sched" type="checkbox" checked style="width:auto">Timetable</label>
+      <select id="fleet"><option value="both" selected>Map: all buses (both directions)</option><option value="same">Map: all buses, same direction</option><option value="one">Map: selected trip only</option></select>
       <span id="running" class="muted"></span>
     </div>
     <div class="tool" style="border-bottom:none;padding-top:4px;padding-bottom:0">
-      <span class="key"><span class="ln"></span>選んだ便の通過</span>
-      <span class="key"><span class="sw" style="background:var(--accent);width:6px;height:6px"></span>その便の GPS の点</span>
-      <span class="key"><span class="ln" style="border-top:2px solid #7f8ba3"></span>同じ日のほかの便（クリックで選ぶ）</span>
-      <span class="key"><span class="ln" style="border-top:2px dashed #b9c1cf"></span>時刻表</span>
-      <span class="key">横が時刻、縦が始点からの距離。線が寝ているほど遅く、線どうしが近いほど続けて来る</span>
+      <span class="key"><span class="ln"></span>Selected trip passages</span>
+      <span class="key"><span class="sw" style="background:var(--accent);width:6px;height:6px"></span>Its GPS points</span>
+      <span class="key"><span class="ln" style="border-top:2px solid #7f8ba3"></span>Other trips that day (click to select)</span>
+      <span class="key"><span class="ln" style="border-top:2px dashed #b9c1cf"></span>Timetable</span>
+      <span class="key">x: time, y: distance from the origin. Flatter = slower; lines close together = buses bunching</span>
     </div>
     <svg id="chart"></svg>
   </div>
@@ -116,7 +116,7 @@
 const $ = id => document.getElementById(id);
 const IST = 5.5 * 3600;
 const COLORS = { pass:'#1a7f4b', order:'#b7791f', none:'#c0392b' };
-const SHORT = { pass:'通過', order:'除外', none:'点なし' };
+const SHORT = { pass:'passed', order:'dropped', none:'no point' };
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt = (ep, sec = true) => { const d = new Date((ep + IST) * 1000); const p = n => String(n).padStart(2, '0');
   return sec ? `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}` : `${p(d.getUTCHours())}:${p(d.getUTCMinutes())}`; };
@@ -139,13 +139,13 @@ async function api(path, params) {
 function say(msg) { $('status').textContent = msg || ''; }
 
 // 日付（10月の31日分）
-(() => { const wd = '日月火水木金土'; for (let d = 1; d <= 31; d++) {
+(() => { const wd = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; for (let d = 1; d <= 31; d++) {
   const o = document.createElement('option'); o.value = `2026-10-${String(d).padStart(2, '0')}`;
-  o.textContent = `10/${d}（${wd[new Date(Date.UTC(2026, 9, d)).getUTCDay()]}）`; $('date').appendChild(o); } })();
+  o.textContent = `Oct ${d} (${wd[new Date(Date.UTC(2026, 9, d)).getUTCDay()]})`; $('date').appendChild(o); } })();
 
 async function searchRoutes(params, keep) {
   const rs = await api('/viz/api/routes', { limit:60, ...params });
-  $('route').innerHTML = rs.map(r => `<option value="${r.route_id}">${esc(r.name)}　${esc(r.desc)}（${r.n_stops}停留所・${r.km}km）</option>`).join('');
+  $('route').innerHTML = rs.map(r => `<option value="${r.route_id}">${esc(r.name)}　${esc(r.desc)} (${r.n_stops} stops · ${r.km} km)</option>`).join('');
   if (keep && rs.some(r => r.route_id === keep)) $('route').value = keep;
   return rs;
 }
@@ -155,27 +155,27 @@ async function loadTrips(pick, keepTime) {
   S.route = $('route').value; S.date = $('date').value;
   if (!S.route) return;
   const tok = ++S.tok;
-  say(''); $('trips').innerHTML = '<p class="muted" style="padding:6px">読み込み中…</p>';
+  say(''); $('trips').innerHTML = '<p class="muted" style="padding:6px">Loading…</p>';
   renderOverview();
-  fleetLyr.clearLayers(); fleetMk = []; S.fleet = null; $('running').textContent = '全バスを読み込み中…';
+  fleetLyr.clearLayers(); fleetMk = []; S.fleet = null; $('running').textContent = 'Loading all buses…';
   api('/viz/api/fleet', { route_id:S.route, date:S.date })
     .then(fj => { if (tok === S.tok) buildFleet(fj); })
-    .catch(e => { if (tok === S.tok) $('running').textContent = '全バスを読み込めませんでした: ' + e.message; });
+    .catch(e => { if (tok === S.tok) $('running').textContent = 'Could not load all buses: ' + e.message; });
   try {
     const [tj, mj] = await Promise.all([api('/viz/api/trips', { route_id:S.route, date:S.date }), api('/viz/api/marey', { route_id:S.route, date:S.date })]);
     if (tok !== S.tok) return;
     S.trips = tj.trips; S.nStops = tj.n_stops; S.marey = mj;
     S.rate = Object.fromEntries(tj.seq_stats.map(x => [x.seq, x]));
-    $('tripcount').textContent = `${tj.trips.length} 便（停留所 ${tj.n_stops}）`;
-    if (!tj.trips.length) { $('trips').innerHTML = '<p class="muted" style="padding:6px">この日は通過を検出できた便がありません。</p>'; return; }
-    $('trips').innerHTML = '<table><tr><th>時刻</th><th>車両</th><th>検出した停留所</th><th>所要</th></tr>' + tj.trips.map((t, k) =>
-      `<tr class="click" data-k="${k}"><td>${t.start.slice(0, 5)}–${t.end.slice(0, 5)}</td><td>${esc(t.vehicle_id)}</td><td>${t.n} / ${tj.n_stops}</td><td>${t.minutes}分</td></tr>`).join('') + '</table>';
+    $('tripcount').textContent = `${tj.trips.length} trips (${tj.n_stops} stops)`;
+    if (!tj.trips.length) { $('trips').innerHTML = '<p class="muted" style="padding:6px">No trips with detected passages on this day.</p>'; return; }
+    $('trips').innerHTML = '<table><tr><th>Time</th><th>Vehicle</th><th>Stops detected</th><th>Duration</th></tr>' + tj.trips.map((t, k) =>
+      `<tr class="click" data-k="${k}"><td>${t.start.slice(0, 5)}–${t.end.slice(0, 5)}</td><td>${esc(t.vehicle_id)}</td><td>${t.n} / ${tj.n_stops}</td><td>${t.minutes} min</td></tr>`).join('') + '</table>';
     document.querySelectorAll('#trips tr.click').forEach(tr => tr.onclick = () => selectTrip(S.trips[+tr.dataset.k]));
     let t = pick && S.trips.find(x => x.vehicle_id === pick.vehicle_id && x.trip_id === pick.trip_id);
-    if (pick && !t) say(`${pick.vehicle_id} のその便は、通過を5停留所以上検出できなかったため一覧にありません。`);
+    if (pick && !t) say(`${pick.vehicle_id}  — this trip is not listed because fewer than 5 stops were detected.`);
     if (!t) t = S.trips.find(x => x.start >= '08:00' && x.n >= 0.9 * tj.n_stops) || [...S.trips].sort((a, b) => b.n - a.n)[0];
     await selectTrip(t, keepTime);
-  } catch (e) { say('読み込めませんでした: ' + e.message); }
+  } catch (e) { say('Could not load: ' + e.message); }
 }
 
 async function selectTrip(t, keepTime) {
@@ -190,19 +190,19 @@ async function selectTrip(t, keepTime) {
     const [a, b] = timeRange(); $('slider').min = a; $('slider').max = b;
     setTime(keepTime != null && keepTime >= a && keepTime <= b ? keepTime : j.gps[0].t);
     drawChart();
-  } catch (e) { say('便を読み込めませんでした: ' + e.message); }
+  } catch (e) { say('Could not load the trip: ' + e.message); }
 }
 
 function renderSummary(j) {
   const s = j.summary;
-  $('summary').innerHTML = `<div>${esc(j.name)}　${esc(j.desc)}<br>${j.date}・車両 ${esc(j.vehicle_id)}・便 ${esc(j.trip_id)}</div>
+  $('summary').innerHTML = `<div>${esc(j.name)}　${esc(j.desc)}<br>${j.date} · vehicle ${esc(j.vehicle_id)} · trip ${esc(j.trip_id)}</div>
   <div class="kpis">
-    <div class="kpi"><b style="color:${COLORS.pass}">${s.n_pass}</b><span>通過を検出</span></div>
-    <div class="kpi"><b style="color:${COLORS.order}">${s.n_order}</b><span>順番の確認で除外</span></div>
-    <div class="kpi"><b style="color:${COLORS.none}">${s.n_none}</b><span>${j.radius_m}m 以内に点なし</span></div>
-    <div class="kpi"><b>${s.n_points}</b><span>GPS の点（${s.interval_s ?? '-'}秒おき）</span></div>
-    <div class="kpi"><b>${s.med_dist_m ?? '-'}m</b><span>通過点と停留所の距離（中央値）</span></div>
-    <div class="kpi"><b>${s.start.slice(0, 5)}–${s.end.slice(0, 5)}</b><span>この便の GPS の記録</span></div>
+    <div class="kpi"><b style="color:${COLORS.pass}">${s.n_pass}</b><span>passages detected</span></div>
+    <div class="kpi"><b style="color:${COLORS.order}">${s.n_order}</b><span>dropped (order check)</span></div>
+    <div class="kpi"><b style="color:${COLORS.none}">${s.n_none}</b><span>no point within ${j.radius_m} m</span></div>
+    <div class="kpi"><b>${s.n_points}</b><span>GPS points (every ${s.interval_s ?? '-'} s)</span></div>
+    <div class="kpi"><b>${s.med_dist_m ?? '-'}m</b><span>passage point to stop (median)</span></div>
+    <div class="kpi"><b>${s.start.slice(0, 5)}–${s.end.slice(0, 5)}</b><span>GPS record of this trip</span></div>
   </div>` + dayLine();
 }
 
@@ -211,35 +211,35 @@ function dayLine() {
   const rs = Object.values(S.rate).filter(r => r.cover >= 5).map(r => r.n_in / r.cover).sort((a, b) => a - b);
   if (!rs.length) return '';
   const med = rs[Math.floor(rs.length / 2)], low = rs.filter(x => x < 0.7).length;
-  return `<div class="muted">この日のこの路線は <b>${S.trips.length}</b> 便で通過を検出（5停留所以上）。停留所ごとの検出率の中央値は <b>${Math.round(med * 100)}%</b>`
-    + (low ? `、70%未満の停留所が ${low} か所（表の「この日の全便」の列）` : '') + '。</div>';
+  return `<div class="muted">This route had <b>${S.trips.length}</b> trips with passages detected today (5+ stops). Median detection rate per stop: <b>${Math.round(med * 100)}%</b>`
+    + (low ? `; ${low} stops below 70% (column "All trips today")` : '') + '.</div>';
 }
 
 function rateCell(seq) {
   const r = S.rate[seq];
   if (!r) return '<span class="muted">-</span>';
-  if (!r.cover) return `<span class="muted" title="最初・最後の停留所は、検出した便しか数えられないので率を出していません。この日の ${S.trips.length} 便のうち ${r.n} 便で検出">端 ${r.n}便</span>`;
+  if (!r.cover) return `<span class="muted" title="No rate at the first and last stop (only detected trips can be counted). Detected on ${r.n} of ${S.trips.length} trips today">end ${r.n} trips</span>`;
   const pct = Math.round(100 * r.n_in / r.cover), col = pct >= 90 ? 'var(--pass)' : pct >= 70 ? 'var(--order)' : 'var(--none)';
-  return `<span title="この日、前後の停留所で通過を検出した（＝ここを確実に通った）${r.cover} 便のうち、ここでも検出できた ${r.n_in} 便"><span class="bar"><i style="width:${pct}%;background:${col}"></i></span> ${pct}%</span>`;
+  return `<span title="Of ${r.cover} trips detected before and after this stop today (so they surely passed it), ${r.n_in} were detected here"><span class="bar"><i style="width:${pct}%;background:${col}"></i></span> ${pct}%</span>`;
 }
 
 function renderOverview() {
   const o = S.ov; if (!o) return;
   const n = x => x.toLocaleString('ja-JP'), T = o.total, D = o.days[S.date];
-  $('overview').innerHTML = `<b>検出は1便だけではありません</b>：10月の全体で <b>${n(T.routes)}</b> 路線（時刻表の ${n(o.n_routes_gtfs)} 路線のうち）・<b>${n(T.vehicles)}</b> 台・<b>${n(T.trips)}</b> 便について、停留所の通過を <b>${n(T.passages)}</b> 回検出しています。`
-    + (D ? `${+S.date.slice(5, 7)}/${+S.date.slice(8)} だけでも ${n(D.routes)} 路線・${n(D.vehicles)} 台・${n(D.trips)} 便です。` : '')
-    + 'ほかの路線は「路線を探す」で、ほかの日は「日付」で切り替えられます。';
+  $('overview').innerHTML = `<b>Not just one trip</b>: across October we detected <b>${n(T.passages)}</b> stop passages on <b>${n(T.routes)}</b> routes (of ${n(o.n_routes_gtfs)} in the timetable), <b>${n(T.vehicles)}</b> vehicles and <b>${n(T.trips)}</b> trips. `
+    + (D ? `On ${+S.date.slice(5, 7)}/${+S.date.slice(8)} alone: ${n(D.routes)} routes, ${n(D.vehicles)} vehicles, ${n(D.trips)} trips. ` : '')
+    + 'Use "Find a route" and "Date" to switch.';
 }
 
 function renderStops(j) {
-  let h = '<table><tr><th>#</th><th>停留所</th><th>通過</th><th>前の検出から</th><th>判定</th><th title="その日にこの停留所の前と後の両方で通過を検出した便のうち、ここでも検出できた便の割合">この日の全便</th></tr>';
+  let h = '<table><tr><th>#</th><th>Stop</th><th>Passage</th><th>Since previous</th><th>Result</th><th title="Share of trips detected both before and after this stop today that were also detected here">All trips today</th></tr>';
   for (const s of j.stops) {
     let link = '';
     if (s.link) {
       const kmh = s.link.sec > 0 ? (s.link.m / 1000) / (s.link.sec / 3600) : null;
-      link = `${(s.link.sec / 60).toFixed(1)}分${kmh != null ? '・' + kmh.toFixed(0) + 'km/h' : ''}`;
+      link = `${(s.link.sec / 60).toFixed(1)} min${kmh != null ? ' · ' + kmh.toFixed(0) + ' km/h' : ''}`;
     }
-    const tm = s.time ? s.time : `<span class="muted" title="最も近い GPS の点（${s.near_time}）までの距離">${s.dist_m}m</span>`;
+    const tm = s.time ? s.time : `<span class="muted" title="Distance to the nearest GPS point (${s.near_time})">${s.dist_m}m</span>`;
     h += `<tr class="click" data-seq="${s.seq}"><td>${s.seq}</td><td class="name">${esc(s.name)}</td><td>${tm}</td><td>${link}</td>`
        + `<td><span class="badge b-${s.status}" title="${esc(s.label)}">${SHORT[s.status]}</span></td><td>${rateCell(s.seq)}</td></tr>`;
   }
@@ -259,11 +259,11 @@ function mix(a, b, x) {
 
 function drawMap(j) {
   lyr.clearLayers(); stopMarkers = {};
-  L.polyline(j.shape, { color:'#98a2b3', weight:6, opacity:.55 }).addTo(lyr).bindTooltip(`路線の形（${j.shape_source}）`);
+  L.polyline(j.shape, { color:'#98a2b3', weight:6, opacity:.55 }).addTo(lyr).bindTooltip(`Route shape (${j.shape_source})`);
   const t0 = j.gps[0].t, t1 = j.gps[j.gps.length - 1].t;
   for (const p of j.gps) {
     L.circleMarker([p.lat, p.lng], { radius:3, stroke:false, fillColor:mix('#8fb8ff', '#1b2f73', (p.t - t0) / Math.max(1, t1 - t0)), fillOpacity:.9 })
-      .addTo(lyr).bindTooltip(`GPS ${p.time}${p.speed != null ? '・速度 ' + p.speed.toFixed(0) : ''}<br>始点から ${p.km.toFixed(2)}km（路線から ${p.off_m}m）`);
+      .addTo(lyr).bindTooltip(`GPS ${p.time}${p.speed != null ? ' · speed ' + p.speed.toFixed(0) : ''}<br>${p.km.toFixed(2)} km from origin (${p.off_m} m off route)`);
   }
   for (const s of j.stops) {
     const col = COLORS[s.status];
@@ -271,10 +271,10 @@ function drawMap(j) {
     if (s.point) L.polyline([[s.lat, s.lng], s.point], { color:col, weight:2, dashArray:'3 3', interactive:false }).addTo(lyr);
     stopMarkers[s.seq] = L.circleMarker([s.lat, s.lng], { radius:6, color:col, weight:2, fillColor:col, fillOpacity:.15 }).addTo(lyr)
       .bindTooltip(`<b>#${s.seq} ${esc(s.name)}</b><br>` + (s.status === 'pass'
-        ? `通過 ${s.time}（最も近い点まで ${s.dist_m}m）`
-        : `${esc(s.label)}<br>最も近い点まで ${s.dist_m}m（${s.near_time}）`));
+        ? `passed ${s.time} (nearest point ${s.dist_m} m)`
+        : `${esc(s.label)}<br>nearest point ${s.dist_m} m (${s.near_time})`));
   }
-  bus = L.circleMarker([j.gps[0].lat, j.gps[0].lng], { radius:9, color:'#fff', weight:3, fillColor:'#e07a3a', fillOpacity:1 }).addTo(lyr).bindTooltip('バス（再生位置）');
+  bus = L.circleMarker([j.gps[0].lat, j.gps[0].lng], { radius:9, color:'#fff', weight:3, fillColor:'#e07a3a', fillOpacity:1 }).addTo(lyr).bindTooltip('Bus (playback position)');
   map.fitBounds(L.latLngBounds(j.gps.map(p => [p.lat, p.lng])).pad(0.08));
 }
 
@@ -285,7 +285,7 @@ function buildFleet(fj) {
   for (const tr of fj.trips) {
     const p = tr.pts;
     const m = L.circleMarker([p[0][1], p[0][2]], { radius:6, color:'#fff', weight:2, fillColor:FLEET[tr.dir], fillOpacity:.95 })
-      .bindTooltip(`<b>${esc(tr.vehicle_id)}</b>（${esc(rname[tr.route_id])}${tr.dir === 'opposite' ? '・逆向き' : ''}）<br>GPS の記録 ${fmt(p[0][0], false)}–${fmt(p[p.length - 1][0], false)}<br>クリックでこの便を選ぶ`);
+      .bindTooltip(`<b>${esc(tr.vehicle_id)}</b> (${esc(rname[tr.route_id])}${tr.dir === 'opposite' ? ', opposite direction' : ''})<br>GPS ${fmt(p[0][0], false)}–${fmt(p[p.length - 1][0], false)}<br>Click to select this trip`);
     m.on('click', () => pickFleet(tr));
     fleetMk.push({ tr, m, on:false });
   }
@@ -318,14 +318,14 @@ function updateFleet(t) {
   }
   if (added && bus) bus.bringToFront();
   $('running').textContent = S.fleetMode === 'one' ? '' :
-    `この時刻に地図上にいるほかのバス：同じ向き ${ns} 台` + (S.fleetMode === 'both' ? `・逆向き ${no} 台` : '');
+    `Other buses on the map now: ${ns} same direction` + (S.fleetMode === 'both' ? ` · ${no} opposite` : '');
 }
 
 async function pickFleet(tr) {
   if (tr.route_id === S.route) {
     const t = S.trips.find(x => x.vehicle_id === tr.vehicle_id && x.trip_id === tr.trip_id);
     if (t) { say(''); selectTrip(t, S.cur); }
-    else say(`${tr.vehicle_id} のこの便は、通過を5停留所以上検出できなかったため一覧にありません。`);
+    else say(`${tr.vehicle_id}  — this trip is not listed because fewer than 5 stops were detected.`);
     return;
   }
   // 逆向きのバス: 路線を切り替えて、その便を選ぶ（再生の時刻はそのまま）
@@ -365,7 +365,7 @@ function setTime(t) {
     const done = s.t != null && s.t <= t; if (done) n++;
     const m = stopMarkers[s.seq]; if (m) m.setStyle({ fillOpacity: done ? .95 : .15 });
   }
-  $('passed').textContent = `選んだ便の通過済み ${n} / ${j.stops.length}` + (before ? '（出発前）' : after ? '（記録の終わり後）' : '');
+  $('passed').textContent = `Selected trip: passed ${n} / ${j.stops.length}` + (before ? ' (before start)' : after ? ' (after end of record)' : '');
   updateFleet(t);
   updateCursor();
 }
@@ -379,8 +379,8 @@ function frame(ts) {
   }
   lastTs = ts; raf = requestAnimationFrame(frame);
 }
-function play() { if (!S.trip) return; if (S.cur >= +$('slider').max) setTime(+$('slider').min); S.playing = true; lastTs = null; $('play').textContent = '⏸ 止める'; raf = requestAnimationFrame(frame); }
-function stop() { S.playing = false; $('play').textContent = '▶ 再生'; if (raf) cancelAnimationFrame(raf); raf = null; }
+function play() { if (!S.trip) return; if (S.cur >= +$('slider').max) setTime(+$('slider').min); S.playing = true; lastTs = null; $('play').textContent = '⏸ Pause'; raf = requestAnimationFrame(frame); }
+function stop() { S.playing = false; $('play').textContent = '▶ Play'; if (raf) cancelAnimationFrame(raf); raf = null; }
 
 // ---- 時間・距離の図（マーレイ図） ----
 const NS = 'http://www.w3.org/2000/svg';
@@ -420,7 +420,7 @@ function drawChart() {
   for (const tr of M.trips) {
     if (!inView(tr.pts) || (tr.vehicle_id === j.vehicle_id && tr.trip_id === j.trip_id)) continue;
     const p = el('path', { d:d(tr.pts), fill:'none', stroke:'#7f8ba3', 'stroke-width':1.5, opacity:.8, style:'cursor:pointer' }, g);
-    el('title', {}, p).textContent = `${tr.vehicle_id}　${fmt(tr.pts[0][0], false)} → ${fmt(tr.pts[tr.pts.length - 1][0], false)}（クリックでこの便を選ぶ）`;
+    el('title', {}, p).textContent = `${tr.vehicle_id}　${fmt(tr.pts[0][0], false)} → ${fmt(tr.pts[tr.pts.length - 1][0], false)} (click to select)`;
     p.addEventListener('click', e => { e.stopPropagation(); const t = S.trips.find(x => x.vehicle_id === tr.vehicle_id && x.trip_id === tr.trip_id); if (t) selectTrip(t); });
   }
   for (const p of j.gps) el('circle', { cx:X(p.t), cy:Y(p.km), r:1.7, fill:'#2457c5', opacity:.55 }, g);
@@ -449,7 +449,7 @@ $('chart').addEventListener('click', e => {
 // ---- 操作 ----
 let timer = null;
 $('rq').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(async () => {
-  try { const rs = await searchRoutes({ q:$('rq').value.trim() }); if (rs.length) await loadTrips(); else say('該当する路線がありません'); } catch (e) { say(e.message); } }, 300); });
+  try { const rs = await searchRoutes({ q:$('rq').value.trim() }); if (rs.length) await loadTrips(); else say('No matching route'); } catch (e) { say(e.message); } }, 300); });
 $('route').onchange = () => loadTrips();
 $('date').onchange = () => loadTrips();
 $('play').onclick = () => S.playing ? stop() : play();
@@ -476,7 +476,7 @@ api('/viz/api/overview', {}).then(o => { S.ov = o; renderOverview(); }).catch(()
     $('rq').value = key;
     await searchRoutes({ q:key }, rid);
     await loadTrips(q.get('vehicle_id') ? { vehicle_id:q.get('vehicle_id'), trip_id:q.get('trip_id') } : null);
-  } catch (e) { say('読み込めませんでした: ' + e.message); }
+  } catch (e) { say('Could not load: ' + e.message); }
 })();
 </script>
 </body>

@@ -148,10 +148,12 @@ class Planner:
         return cand, len(O), len(D)
 
     def plan(self, o_lat, o_lng, d_lat, d_lng, depart: datetime, sort: str = "fastest",
-             max_options: int = 3, live_wait=None, live_links=None) -> dict:
+             max_options: int = 3, live_wait=None, live_links=None, live_transfer=None) -> dict:
+        """live_transfer: 乗り換え（2 本目）の待ちを、出発の時点で見えているバスの到着予測から出す関数
+        (route_id, seq, 乗り換えの停留所に着く予測の時刻) -> (待ち秒, 出どころ) or None。None なら過去の通過の時刻表。"""
         self._live_links = live_links
         cand, nO, nD = self._candidates(o_lat, o_lng, d_lat, d_lng)
-        opts = [self._evaluate(st, depart, live_wait) for _, st in cand]
+        opts = [self._evaluate(st, depart, live_wait, live_transfer) for _, st in cand]
         if getattr(self, "plan_replay", False) and getattr(self, "plan_wait", None) is not None:
             for o in opts:
                 self._replay(o, depart)
@@ -176,6 +178,9 @@ class Planner:
         if not getattr(self, "keep_tot", False):
             for o in opts:
                 o.pop("_tot", None)
+        for o in opts:
+            for l in o["legs"]:
+                l.pop("_live_board_s", None)
         return {
             "from": {"lat": o_lat, "lng": o_lng, "near_stops": nO},
             "to": {"lat": d_lat, "lng": d_lng, "near_stops": nD},
@@ -390,6 +395,19 @@ class Planner:
             m = self.plan_wait.journey_many(legs[1:], depart, w0 + waits + ride0, walk_last)
             if m is None:
                 return
+            lb = bus[1].get("_live_board_s")
+            if lb is not None:
+                # 乗り換えのバスが出発の時点で見えているとき: 1 本目の待ちの各通りで乗り換えの停留所に着く時刻が
+                # そのバスに間に合えば（CATCH_MIN_S まで）、過去の日の再現ではなくそのバスに乗った到着にする。
+                # その待ちも点の予測なので、1 本目の「手前を走るバス」と同じ外れ方（分位点）を日の数だけ取って足す
+                # （外れ方を入れないと、検証週で使った 47 組の、余裕を見た到着までに着いた割合が 97% → 76% に下がった）
+                a1 = w0 + waits + ride0 + legs[1][2]
+                hit = lb >= a1 + C.CATCH_MIN_S
+                E1 = samples_for(getattr(self, "live_excess", None), bus[1]["wait_source"], bus[1]["wait_min"] * 60)
+                nd = m.shape[1]
+                e1 = (np.quantile(E1, (np.arange(nd) + 0.5) / nd, method="inverted_cdf")
+                      if E1 is not None else np.zeros(nd))
+                m = np.where(hit[:, None], lb + e1[None, :] + bus[1]["ride_min"] * 60 + walk_last, m)
             tot = m.ravel()       # [待ちの 40 通り × 日]。どの通りも日数は同じなので、1 通りの重みは同じ
         # 乗車時間のばらつき: 各区間の (85% 点 − 中央値) を二乗和の平方根で合わせ、標準正規の 21 点に掛ける
         sd = np.sqrt(sum(((l["ride_min_p85"] - l["ride_min"]) * 60) ** 2 for l in bus if l.get("ride_min_p85"))) / 1.0364
@@ -419,7 +437,7 @@ class Planner:
             o["safe_source"] = ("見えていたバスに乗れない場合や、乗り換えから先で過去の日にバスが来なかった場合を合わせると、"
                                 "着けない見込みが 15% を超えるので、余裕を見た到着は出さない")
 
-    def _evaluate(self, st, depart: datetime, live_wait=None) -> dict:
+    def _evaluate(self, st, depart: datetime, live_wait=None, live_transfer=None) -> dict:
         legs, t = [], depart
         dtp = C.day_type(depart.date())
         walk_ms = [x for x in st if not isinstance(x, tuple)]
@@ -444,6 +462,12 @@ class Planner:
                     wait, src = lw
                 elif lw is not None:
                     wait, src = lw, "リアルタイム"
+            live_board_s = None
+            if n == 1 and live_transfer is not None:
+                lw = live_transfer(rid, i, t)
+                if lw is not None:
+                    wait, src = lw
+                    live_board_s = (t - depart).total_seconds() + wait
             if wait is None and getattr(self, "plan_wait", None) is not None:
                 wait = self.plan_wait.wait(rid, i, t)      # 実際の通過の時刻表（tsh.waitmodel.PassageTimetable）
                 if wait is not None:
@@ -494,6 +518,8 @@ class Planner:
                 "crowding": crowd,
                 "path": self.seq_xy[rid][i:j + 1].round(6).tolist(),
             })
+            if live_board_s is not None:
+                legs[-1]["_live_board_s"] = live_board_s   # _live_dist 用（出発からの秒。API には返さない）
             total_wait += wait; total_ride += ride
             buffer_s += (ride_p85 - ride) if ride_p85 else 0.0
             if "prob" in crowd:   # 混雑の確率があれば、重みの期待値（座れる 1.0 / 立つ 1.5 / 混雑 2.3）を使う

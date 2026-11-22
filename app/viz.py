@@ -40,7 +40,7 @@ from tsh.passages import OUT as PASS_DIR, RADIUS_M  # noqa: E402
 
 IST = timezone(timedelta(hours=5, minutes=30))
 DAYS = [date(2026, 10, d) for d in range(1, 32)]
-STATUS = {"pass": "通過", "order": "近くを通ったが順番の確認で除外", "none": f"{RADIUS_M:.0f}m 以内に GPS の点なし"}
+STATUS = {"pass": "passed", "order": "passed nearby, dropped by the stop-order check", "none": f"no GPS point within {RADIUS_M:.0f} m"}
 
 router = APIRouter()
 
@@ -49,9 +49,9 @@ def _day(s: str) -> date:
     try:
         d = date.fromisoformat(s)
     except ValueError as e:
-        raise HTTPException(400, f"日付は YYYY-MM-DD で指定してください: {s}") from e
+        raise HTTPException(400, f"Date must be YYYY-MM-DD: {s}") from e
     if d not in DAYS:
-        raise HTTPException(400, "データがあるのは 2026-10-01〜2026-10-31 です")
+        raise HTTPException(400, "Data covers 2026-10-01 to 2026-10-31 only")
     return d
 
 
@@ -74,7 +74,7 @@ def _pat() -> pd.DataFrame:
 def _route(route_id: str) -> pd.DataFrame:
     g = _pat()[_pat().route_id == str(route_id)].sort_values("seq")
     if g.empty:
-        raise HTTPException(404, f"路線 {route_id} は時刻表にありません")
+        raise HTTPException(404, f"Route {route_id} is not in the timetable")
     return g
 
 
@@ -167,7 +167,7 @@ def trip(route_id: str, date: str, vehicle_id: str, trip_id: str):
         gp = con.execute(f"SELECT epoch(ts) AS t, lat, lng, speed FROM '{gf}' WHERE vehicle_id = ? AND trip_id = ? ORDER BY ts",
                          [vehicle_id, trip_id]).df()
     if gp.empty:
-        raise HTTPException(404, "この便の GPS の点が見つかりません")
+        raise HTTPException(404, "No GPS points found for this trip")
     slat, slon, cum = st.stop_lat.to_numpy(), st.stop_lon.to_numpy(), st.cum_m.to_numpy()
     # 停留所ごとの判定（tsh.passages と同じ考え方を、この便の点だけで再現する）
     dd = C.dist_m(slat[:, None], slon[:, None], gp.lat.to_numpy()[None, :], gp.lng.to_numpy()[None, :])
@@ -213,7 +213,7 @@ def trip(route_id: str, date: str, vehicle_id: str, trip_id: str):
                  "km": round(float(x) / 1000, 3), "off_m": round(float(o), 1)}
                 for t, a, b, v, x, o in zip(gp.t, gp.lat, gp.lng, gp.speed, along, off)],
         "shape": shape or st[["stop_lat", "stop_lon"]].to_numpy().tolist(),
-        "shape_source": "GTFS の shapes.txt" if shape else "停留所を直線で結んだもの",
+        "shape_source": "GTFS shapes.txt" if shape else "straight lines between stops",
     }
 
 

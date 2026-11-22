@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ja">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -32,19 +32,19 @@
 <body>
 <div class="wrap">
 <aside>
-  <h1>デリー・バス経路検索</h1>
-  <div class="sub">所要時間は実際のバス GPS（2026年10月）から、混雑度は電子乗車券から推定。<a href="/passages">停留所の通過を地図で確かめる →</a></div>
-  <div class="hint">地図を1回クリックで出発地、2回目で目的地を設定します。</div>
+  <h1>Delhi Bus Journey Planner</h1>
+  <div class="sub">Times are learned from real bus GPS (Oct 2026) and live positions, not the timetable. Crowding is estimated from e-tickets. <a href="/passages">Inspect stop passages on the map →</a></div>
+  <div class="hint">Click the map once to set the origin, and again to set the destination.</div>
   <div class="row">
-    <div><label>出発地</label><input id="from" value="28.6676,77.2285"></div>
-    <div><label>目的地</label><input id="to" value="28.5494,77.2510"></div>
+    <div><label>From (lat,lng)</label><input id="from" value="28.6676,77.2285"></div>
+    <div><label>To (lat,lng)</label><input id="to" value="28.5494,77.2510"></div>
   </div>
   <div class="row">
-    <div><label>時刻の指定</label><select id="mode"><option value="depart">出発時刻</option><option value="arrive">到着時刻</option></select></div>
-    <div><label>時刻（IST）</label><input id="depart" type="datetime-local" value="2026-11-17T08:30"></div>
+    <div><label>Time</label><select id="mode"><option value="depart">Depart at</option><option value="arrive">Arrive by</option></select></div>
+    <div><label>Date &amp; time (IST)</label><input id="depart" type="datetime-local" value="2026-11-17T08:30"></div>
   </div>
-  <div><label>並べ方</label><select id="sort"><option value="fastest">早い順</option><option value="comfort">快適さ重視</option><option value="fewer_transfers">乗り換えが少ない順</option></select></div>
-  <button id="go">検索</button>
+  <div><label>Sort</label><select id="sort"><option value="fastest">Fastest</option><option value="comfort">Most comfortable</option><option value="fewer_transfers">Fewest transfers</option></select></div>
+  <button id="go">Search</button>
   <div id="out"></div>
 </aside>
 <div id="map"></div>
@@ -55,12 +55,13 @@ const map = L.map('map').setView([28.61, 77.21], 11);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 18, attribution: '&copy; OpenStreetMap'}).addTo(map);
 const layer = L.layerGroup().addTo(map);
 let clicks = 0, mFrom, mTo;
+const LV = {"座れる":"Seats","立つ":"Standing","混雑":"Crowded","不明":"Unknown"};
 const colors = {"座れる":"#1a7f4b","立つ":"#b7791f","混雑":"#c0392b","不明":"#98a2b3"};
 function setMarkers(){
   const p = s => s.split(',').map(Number);
   if (mFrom) map.removeLayer(mFrom); if (mTo) map.removeLayer(mTo);
-  mFrom = L.circleMarker(p(from.value), {radius:7, color:'#2457c5'}).addTo(map).bindTooltip('出発');
-  mTo = L.circleMarker(p(to.value), {radius:7, color:'#111'}).addTo(map).bindTooltip('目的地');
+  mFrom = L.circleMarker(p(from.value), {radius:7, color:'#2457c5'}).addTo(map).bindTooltip('From');
+  mTo = L.circleMarker(p(to.value), {radius:7, color:'#111'}).addTo(map).bindTooltip('To');
 }
 map.on('click', e => {
   const v = e.latlng.lat.toFixed(5)+','+e.latlng.lng.toFixed(5);
@@ -71,55 +72,55 @@ function draw(o){
   layer.clearLayers();
   for (const l of o.legs) if (l.mode==='bus') {
     L.polyline(l.path, {color: colors[l.crowding.level]||'#555', weight:6, opacity:.85}).addTo(layer)
-      .bindTooltip(`${l.route} ${l.crowding.level}`);
+      .bindTooltip(`${l.route} ${LV[l.crowding.level]||l.crowding.level}`);
   }
   const all = o.legs.filter(l=>l.mode==='bus').flatMap(l=>l.path);
   if (all.length) map.fitBounds(L.latLngBounds(all).pad(0.2));
 }
 function legHtml(l){
-  if (l.mode==='walk') return `<div class="leg">🚶 徒歩 ${l.minutes}分（${l.meters}m）${l.to_stop? '→ '+l.to_stop : '→ 目的地'}</div>`;
+  if (l.mode==='walk') return `<div class="leg">🚶 Walk ${l.minutes} min (${l.meters} m) ${l.to_stop? '→ '+l.to_stop : '→ destination'}</div>`;
   const c = l.crowding;
-  const conf = c.confidence ? `信頼度:${c.confidence}` : '';
+  const conf = c.confidence ? `confidence: ${c.confidence}` : '';
   let load = '';
-  if (c.load != null && c.load_90ci) load = `約${c.load}人（90%区間 ${c.load_90ci[0]}–${c.load_90ci[1]}）`;
+  if (c.load != null && c.load_90ci) load = `~${c.load} on board (90% interval ${c.load_90ci[0]}–${c.load_90ci[1]})`;
   else if (c.load != null && c.load_range_assumptions) {
     const [lo, hi] = c.load_range_assumptions;
-    load = lo === hi ? `平均 約${c.load}人（定員から上限を決めた路線）` : `平均 約${c.load}人（前提の幅 ${lo}–${hi}）`;
+    load = lo === hi ? `avg ~${c.load} on board (capped by vehicle capacity)` : `avg ~${c.load} on board (range under assumptions ${lo}–${hi})`;
   }
-  const prob = c.prob ? `座れる ${Math.round(c.prob['座れる']*100)}%・立つ ${Math.round(c.prob['立つ']*100)}%・混雑 ${Math.round(c.prob['混雑']*100)}%` : '';
-  const p85 = l.ride_min_p85 ? `・余裕を見ると ${l.ride_min_p85}分` : '';
-  return `<div class="leg">🚌 <b>${l.route}</b> ${l.board.stop} → ${l.alight.stop}（${l.stops}停留所）<br>
-    待ち ${l.wait_min}分<span class="muted">（${l.wait_source}）</span>・乗車 ${l.ride_min}分<span class="muted">${p85}</span>
-    <span class="muted">（14時なら ${l.ride_min_at_14h}分・時刻表 ${l.ride_min_timetable ?? '-'}分）</span><br>
-    <span class="badge b-${c.level}">${c.level}</span> <span class="muted">${prob}</span><br>
+  const prob = c.prob ? `seat ${Math.round(c.prob['座れる']*100)}% · standing ${Math.round(c.prob['立つ']*100)}% · crowded ${Math.round(c.prob['混雑']*100)}%` : '';
+  const p85 = l.ride_min_p85 ? ` · up to ${l.ride_min_p85} min (85%)` : '';
+  return `<div class="leg">🚌 <b>${l.route}</b> ${l.board.stop} → ${l.alight.stop} (${l.stops} stops)<br>
+    Wait ${l.wait_min} min<span class="muted"> (${l.wait_source})</span> · Ride ${l.ride_min} min<span class="muted">${p85}</span>
+    <span class="muted">(at 14:00: ${l.ride_min_at_14h} min · timetable: ${l.ride_min_timetable ?? '-'} min)</span><br>
+    <span class="badge b-${c.level}">${LV[c.level]||c.level}</span> <span class="muted">${prob}</span><br>
     <span class="muted">${load} ${conf}</span></div>`;
 }
 async function go(){
   setMarkers();
-  out.innerHTML = '<p class="muted">検索中…</p>';
+  out.innerHTML = '<p class="muted">Searching…</p>';
   const q = new URLSearchParams({from: from.value, to: to.value, [mode.value]: depart.value, sort: sort.value});
   try {
     const r = await fetch('/journeys?' + q); const j = await r.json();
     if (!r.ok) throw new Error(j.detail || r.status);
-    if (!j.options.length) { out.innerHTML = '<p>経路が見つかりませんでした。</p>'; layer.clearLayers(); return; }
-    // 到着時刻を指定したとき: 85% の日で間に合う最も遅い出発を大きく出す
+    if (!j.options.length) { out.innerHTML = '<p>No route found.</p>'; layer.clearLayers(); return; }
+    // arrive-by: show the latest departure that made it on 85% of past days
     const head = o => j.arrive_by
       ? (o.depart
-          ? `<div class="big">${o.depart} に出る <span class="muted">${j.arrive_by.slice(11,16)} までに着いた日 ${Math.round(o.on_time_share*100)}%・ふつうは ${o.arrive} 着（${o.total_min}分）・乗換 ${o.transfers}回</span></div>`
-          : `<div class="big">間に合う出発を出せない <span class="muted">乗換 ${o.transfers}回</span></div>`)
-      : `<div class="big">${o.total_min}分 <span class="muted">着 ${o.arrive}${o.arrive_safe ? '（余裕を見ると ' + o.arrive_safe + '）' : ''}・乗換 ${o.transfers}回</span></div>`;
+          ? `<div class="big">Leave at ${o.depart} <span class="muted">arrived by ${j.arrive_by.slice(11,16)} on ${Math.round(o.on_time_share*100)}% of past days · typically arrive ${o.arrive} (${o.total_min} min) · ${o.transfers} transfer(s)</span></div>`
+          : `<div class="big">No reliable departure <span class="muted">${o.transfers} transfer(s)</span></div>`)
+      : `<div class="big">${o.total_min} min <span class="muted">arrive ${o.arrive}${o.arrive_safe ? ' (safe: ' + o.arrive_safe + ')' : ''} · ${o.transfers} transfer(s)</span></div>`;
     out.innerHTML = j.options.map((o,k)=>`<div class="opt" data-k="${k}">
       ${head(o)}
       ${o.unreliable ? '<div class="muted">⚠ ' + o.total_source + '</div>' : (o.total_source ? '<div class="muted">' + o.total_source + '</div>' : '')}
       ${o.safe_source && !o.arrive_safe ? '<div class="muted">⚠ ' + o.safe_source + '</div>' : ''}
-      <div class="muted">徒歩 ${o.walk_min}分・待ち ${o.wait_min}分・乗車 ${o.ride_min}分・体感 ${o.perceived_min}分
-        <span class="badge b-${o.crowding_worst}">${o.crowding_worst}</span></div>
+      <div class="muted">walk ${o.walk_min} · wait ${o.wait_min} · ride ${o.ride_min} · perceived ${o.perceived_min} min
+        <span class="badge b-${o.crowding_worst}">${LV[o.crowding_worst]||o.crowding_worst}</span></div>
       ${o.legs.map(legHtml).join('')}</div>`).join('');
     document.querySelectorAll('.opt').forEach(el => el.onclick = () => {
       document.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel')); el.classList.add('sel'); draw(j.options[+el.dataset.k]);
     });
     document.querySelector('.opt').click();
-  } catch (e) { out.innerHTML = `<p>エラー: ${e.message}</p>`; }
+  } catch (e) { out.innerHTML = `<p>Error: ${e.message}</p>`; }
 }
 document.getElementById('go').onclick = go;
 setMarkers();

@@ -1,0 +1,79 @@
+{
+ "pairs": 20,
+ "plan": {
+  "n": 14,
+  "median_err_%": 21.0,
+  "within_5min_%": 42.9,
+  "within_10min_%": 71.4,
+  "median_bias_min": -0.2,
+  "actual_median_min": 24.1,
+  "timetable_median_err_%": 22.8,
+  "arrived_by_safe_%": 85.7,
+  "nobus_%": 0.0,
+  "untracked_%": 30.0
+ },
+ "live": {
+  "n": 14,
+  "median_err_%": 15.0,
+  "within_5min_%": 57.1,
+  "within_10min_%": 92.9,
+  "median_bias_min": 0.1,
+  "actual_median_min": 17.1,
+  "timetable_median_err_%": 23.3,
+  "arrived_by_safe_%": 92.3,
+  "nobus_%": 0.0,
+  "untracked_%": 30.0
+ },
+ "2-5km": {
+  "plan": {
+   "n": 9,
+   "median_err_%": 20.6,
+   "within_5min_%": 44.4,
+   "within_10min_%": 88.9,
+   "median_bias_min": 0.6,
+   "actual_median_min": 16.9,
+   "timetable_median_err_%": 21.2,
+   "arrived_by_safe_%": 88.9,
+   "nobus_%": 0.0,
+   "untracked_%": 25.0
+  },
+  "live": {
+   "n": 9,
+   "median_err_%": 23.3,
+   "within_5min_%": 66.7,
+   "within_10min_%": 100.0,
+   "median_bias_min": 0.3,
+   "actual_median_min": 15.4,
+   "timetable_median_err_%": 25.5,
+   "arrived_by_safe_%": 88.9,
+   "nobus_%": 0.0,
+   "untracked_%": 25.0
+  }
+ },
+ "5-8km": {
+  "plan": {
+   "n": 5,
+   "median_err_%": 21.3,
+   "within_5min_%": 40.0,
+   "within_10min_%": 40.0,
+   "median_bias_min": -1.6,
+   "actual_median_min": 43.4,
+   "timetable_median_err_%": 24.5,
+   "arrived_by_safe_%": 80.0,
+   "nobus_%": 0.0,
+   "untracked_%": 37.5
+  },
+  "live": {
+   "n": 5,
+   "median_err_%": 14.8,
+   "within_5min_%": 40.0,
+   "within_10min_%": 80.0,
+   "median_bias_min": -4.1,
+   "actual_median_min": 36.0,
+   "timetable_median_err_%": 20.9,
+   "arrived_by_safe_%": 100.0,
+   "nobus_%": 0.0,
+   "untracked_%": 37.5
+  }
+ }
+}

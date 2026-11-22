@@ -15,3 +15,5 @@ experiments/**/out/
 experiments/**/*.log
 experiments/**/out_*.csv
 experiments/**/*_report.txt
+# 解析の途中データ（元データ由来の行単位データなのでコミットしない）
+results/*.pkl
