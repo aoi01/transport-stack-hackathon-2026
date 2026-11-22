@@ -6,124 +6,400 @@
 <title>Delhi Bus Planner</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
-  :root { --bg:#fff; --fg:#1d2433; --muted:#667085; --line:#e4e7ec; --seat:#1a7f4b; --stand:#b7791f; --crowd:#c0392b; --unk:#98a2b3; --accent:#2457c5; }
+  :root {
+    --fg:#1f2329; --muted:#5f6670; --faint:#8a919b; --line:#e6e8eb; --soft:#f2f4f6; --hover:#f6f8fa;
+    --accent:#1a63d8; --accent-soft:#e9f1fe; --live:#d0342c; --warn:#a15c00;
+    --seat:#2e9d62; --stand:#e5a133; --crowd:#db4a3f; --unk:#c9ced6;
+    --shadow:0 2px 6px rgba(32,33,36,.18), 0 8px 28px rgba(32,33,36,.14);
+  }
   * { box-sizing:border-box; }
-  body { margin:0; font:14px/1.5 system-ui,-apple-system,"Segoe UI","Hiragino Sans","Noto Sans JP",sans-serif; color:var(--fg); background:var(--bg); }
-  .wrap { display:grid; grid-template-columns: 380px 1fr; height:100vh; }
-  aside { border-right:1px solid var(--line); overflow:auto; padding:16px; }
-  #map { height:100vh; }
-  h1 { font-size:17px; margin:0 0 4px; }
-  .sub { color:var(--muted); font-size:12px; margin-bottom:12px; }
-  label { display:block; font-size:12px; color:var(--muted); margin:8px 0 2px; }
-  input, select, button { font:inherit; padding:6px 8px; border:1px solid var(--line); border-radius:6px; width:100%; }
-  button { background:var(--accent); color:#fff; border:none; cursor:pointer; margin-top:10px; }
-  .row { display:flex; gap:8px; } .row > * { flex:1; }
-  .opt { border:1px solid var(--line); border-radius:8px; padding:10px; margin-top:10px; cursor:pointer; }
-  .opt.sel { border-color:var(--accent); box-shadow:0 0 0 2px #2457c522; }
-  .big { font-size:18px; font-weight:600; }
-  .leg { margin:6px 0 0 0; padding-left:10px; border-left:3px solid var(--line); font-size:13px; }
-  .badge { display:inline-block; padding:0 6px; border-radius:10px; color:#fff; font-size:12px; }
-  .b-座れる { background:var(--seat); } .b-立つ { background:var(--stand); } .b-混雑 { background:var(--crowd); } .b-不明 { background:var(--unk); }
-  .muted { color:var(--muted); font-size:12px; }
-  .hint { background:#f5f7fa; border-radius:6px; padding:8px; font-size:12px; color:var(--muted); }
-  @media (max-width: 800px) { .wrap { grid-template-columns:1fr; grid-template-rows:auto 50vh; height:auto; } #map{height:50vh;} aside{border-right:none;} }
+  html, body { height:100%; margin:0; }
+  body { font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--fg); background:#e9ecef; overflow:hidden; }
+  button, input, select { font:inherit; color:inherit; }
+  a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
+  #map { position:fixed; inset:0; }
+
+  /* floating panel, like a maps app */
+  .panel { position:fixed; z-index:1000; top:12px; left:12px; bottom:12px; width:408px; display:flex; flex-direction:column;
+           background:#fff; border-radius:14px; box-shadow:var(--shadow); overflow:hidden; }
+  .search { padding:14px 14px 10px; border-bottom:1px solid var(--line); }
+  .brand { display:flex; align-items:center; justify-content:space-between; margin:0 2px 10px; }
+  .brand b { font-size:15px; }
+  .brand a { font-size:12px; color:var(--muted); }
+
+  .places { display:grid; grid-template-columns:22px 1fr 34px; gap:6px 8px; align-items:center; position:relative; }
+  .ico { display:flex; justify-content:center; }
+  .ico i { width:11px; height:11px; border-radius:50%; border:2.5px solid var(--muted); }
+  .ico i.b { border:0; width:12px; height:16px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); background:var(--live); }
+  .dots { position:absolute; left:10px; top:27px; height:14px; border-left:2px dotted #b9bfc7; }
+  .field { position:relative; }
+  .field input { width:100%; height:38px; padding:0 12px; border:1px solid var(--line); border-radius:8px; background:#fff; outline:none; }
+  .field input:focus { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent); }
+  .swap { grid-column:3; grid-row:1 / span 2; width:34px; height:34px; border:0; border-radius:50%; background:transparent; cursor:pointer; color:var(--muted); font-size:18px; }
+  .swap:hover { background:var(--soft); color:var(--fg); }
+  .sugg { position:absolute; z-index:5; left:0; right:0; top:calc(100% + 4px); background:#fff; border-radius:8px; box-shadow:var(--shadow); max-height:300px; overflow:auto; display:none; }
+  .sugg div { display:flex; gap:10px; align-items:center; padding:9px 12px; cursor:pointer; }
+  .sugg div::before { content:"🚏"; font-size:13px; }
+  .sugg div.none::before { content:none; }
+  .sugg div:hover, .sugg div.on { background:var(--soft); }
+
+  .opts { display:flex; gap:8px; align-items:center; margin:10px 0 0 30px; flex-wrap:wrap; }
+  .opts select, .opts input { height:32px; border:1px solid var(--line); border-radius:16px; padding:0 10px; background:#fff; cursor:pointer; font-size:13px; }
+  .opts input { cursor:text; }
+  .opts select:focus, .opts input:focus { outline:none; border-color:var(--accent); }
+  .chips { display:flex; gap:6px; margin:10px 0 0 30px; flex-wrap:wrap; }
+  .chips button { height:28px; padding:0 11px; border:1px solid var(--line); border-radius:14px; background:#fff; cursor:pointer; font-size:12.5px; color:var(--muted); }
+  .chips button[aria-pressed="true"] { background:var(--accent-soft); border-color:transparent; color:var(--accent); font-weight:600; }
+
+  .body { flex:1; min-height:0; overflow:auto; }
+  .status { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; font-size:12px; color:var(--muted); border-bottom:1px solid var(--line); }
+  .live { display:inline-flex; align-items:center; gap:5px; color:var(--live); font-weight:600; }
+  .live::before { content:""; width:7px; height:7px; border-radius:50%; background:var(--live); animation:pulse 1.6s infinite; }
+  @keyframes pulse { 50% { opacity:.3; } }
+  .msg { padding:28px 20px; text-align:center; color:var(--muted); }
+  .msg.err { color:var(--live); }
+
+  .row { padding:14px 16px; border-bottom:1px solid var(--line); cursor:pointer; }
+  .row:hover, .row.hot { background:var(--hover); }
+  .r1 { display:flex; justify-content:space-between; gap:10px; align-items:center; }
+  .seq { display:flex; flex-wrap:wrap; align-items:center; gap:4px; min-width:0; }
+  .bus { display:inline-flex; align-items:center; gap:3px; padding:1px 6px; border-radius:4px; color:#fff; font-size:12px; font-weight:700; white-space:nowrap; }
+  .walkic { color:var(--muted); font-size:13px; }
+  .arr { color:#b4bac3; font-size:11px; }
+  .dur { font-size:16px; font-weight:700; white-space:nowrap; }
+  .r2 { margin-top:4px; color:var(--fg); font-variant-numeric:tabular-nums; }
+  .r3 { margin-top:2px; color:var(--muted); font-size:12.5px; }
+  .tag { display:inline-block; padding:0 6px; border-radius:4px; font-size:11.5px; font-weight:600; }
+  .t-seat { background:#e5f5ec; color:#1d7a4a; } .t-stand { background:#fdf1dc; color:#8a5300; } .t-crowd { background:#fde7e5; color:#b2342b; } .t-unk { background:var(--soft); color:var(--faint); }
+  .warn { margin-top:6px; font-size:12px; color:var(--warn); }
+  .skel { height:74px; margin:12px 16px; border-radius:8px; background:linear-gradient(90deg,#f1f3f5 25%,#e6e9ed 37%,#f1f3f5 63%); background-size:400% 100%; animation:sh 1.2s ease infinite; }
+  @keyframes sh { 0%{background-position:100% 50%} 100%{background-position:0 50%} }
+  .about { padding:14px 16px 18px; font-size:12px; color:var(--faint); }
+  .about a { color:var(--muted); }
+
+  /* detail view */
+  .dhead { position:sticky; top:0; z-index:2; background:#fff; padding:12px 16px; border-bottom:1px solid var(--line); }
+  .back { border:0; background:transparent; cursor:pointer; color:var(--accent); padding:4px 0; font-weight:600; }
+  .dsum { display:flex; justify-content:space-between; align-items:baseline; margin-top:6px; }
+  .dsum .big { font-size:20px; font-weight:700; }
+  .dsum .tm { font-size:15px; font-variant-numeric:tabular-nums; }
+  .safe { margin-top:6px; padding:8px 10px; background:var(--soft); border-radius:8px; font-size:12.5px; color:var(--muted); }
+  .safe b { color:var(--fg); }
+  .steps { padding:12px 16px 6px; }
+  .st { display:grid; grid-template-columns:46px 22px 1fr; column-gap:8px; }
+  .st .tm { text-align:right; font-size:13px; font-weight:600; font-variant-numeric:tabular-nums; padding-top:1px; }
+  .st .ln { position:relative; display:flex; justify-content:center; }
+  .st .ln::after { content:""; position:absolute; top:0; bottom:0; width:4px; border-radius:2px; background:var(--c); }
+  .st.walk .ln::after { width:0; border-left:3px dotted #aab1bb; background:none; }
+  .st.stop .ln::after { top:50%; } .st.stop.mid .ln::after { top:0; }
+  .st.first .ln::after { top:9px; } .st.last .ln::after { bottom:auto; height:9px; }
+  .st .nd { position:relative; z-index:1; width:13px; height:13px; margin-top:3px; border-radius:50%; background:#fff; border:3px solid var(--c); }
+  .st .bd { padding-bottom:16px; min-width:0; }
+  .st .h { font-weight:600; }
+  .st .s { color:var(--muted); font-size:12.5px; margin-top:2px; }
+  .st .n { color:var(--faint); font-size:12px; margin-top:2px; }
+  .crowd { display:flex; align-items:center; gap:8px; margin-top:6px; }
+  .mini { display:flex; width:84px; height:6px; border-radius:3px; overflow:hidden; background:var(--unk); flex:none; }
+  .mini i { height:100%; }
+  .basis { margin:0 16px 18px; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font-size:12px; color:var(--muted); }
+
+  /* map pins */
+  .pin { width:18px; height:18px; border-radius:50%; background:#fff; border:4px solid var(--fg); box-shadow:0 1px 4px rgba(0,0,0,.35); }
+  .pinb { width:26px; height:26px; border-radius:50% 50% 50% 0; transform:rotate(-45deg); background:var(--live); box-shadow:0 1px 4px rgba(0,0,0,.4); }
+  .pinb::after { content:""; position:absolute; left:8px; top:8px; width:10px; height:10px; border-radius:50%; background:#fff; }
+  .popbtn { display:block; width:100%; margin:3px 0; padding:7px 12px; border:0; border-radius:6px; background:var(--soft); cursor:pointer; font:600 13px system-ui; text-align:left; }
+  .popbtn:hover { background:var(--accent-soft); color:var(--accent); }
+  .tiles { filter:saturate(.55) brightness(1.04) contrast(.92); }
+  .leaflet-control-zoom { border:0 !important; box-shadow:var(--shadow) !important; }
+
+  @media (max-width: 760px) {
+    .panel { top:auto; left:0; right:0; bottom:0; width:auto; height:62vh; border-radius:16px 16px 0 0; }
+    .opts, .chips { margin-left:0; }
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-<aside>
-  <h1>Delhi Bus Journey Planner</h1>
-  <div class="sub">Times are learned from real bus GPS (Oct 2026) and live positions, not the timetable. Crowding is estimated from e-tickets. <a href="/passages">Inspect stop passages on the map →</a></div>
-  <div class="hint">Click the map once to set the origin, and again to set the destination.</div>
-  <div class="row">
-    <div><label>From (lat,lng)</label><input id="from" value="28.6676,77.2285"></div>
-    <div><label>To (lat,lng)</label><input id="to" value="28.5494,77.2510"></div>
-  </div>
-  <div class="row">
-    <div><label>Time</label><select id="mode"><option value="depart">Depart at</option><option value="arrive">Arrive by</option></select></div>
-    <div><label>Date &amp; time (IST)</label><input id="depart" type="datetime-local" value="2026-11-17T08:30"></div>
-  </div>
-  <div><label>Sort</label><select id="sort"><option value="fastest">Fastest</option><option value="comfort">Most comfortable</option><option value="fewer_transfers">Fewest transfers</option></select></div>
-  <button id="go">Search</button>
-  <div id="out"></div>
-</aside>
 <div id="map"></div>
-</div>
+
+<section class="panel" aria-label="Journey planner">
+  <form class="search" id="f" autocomplete="off">
+    <div class="brand"><b>Delhi Bus Planner</b><a href="/passages">Stop-passage inspector →</a></div>
+    <div class="places">
+      <span class="ico"><i></i></span>
+      <div class="field"><input id="fromIn" placeholder="Choose starting point" aria-label="Starting point"><div class="sugg" id="fromS"></div></div>
+      <button type="button" class="swap" id="swap" title="Swap" aria-label="Swap start and destination">⇅</button>
+      <span class="ico"><i class="b"></i></span>
+      <div class="field"><input id="toIn" placeholder="Choose destination" aria-label="Destination"><div class="sugg" id="toS"></div></div>
+      <span class="dots"></span>
+    </div>
+    <div class="opts">
+      <select id="mode" aria-label="When">
+        <option value="now">Leave now</option>
+        <option value="depart">Depart at</option>
+        <option value="arrive">Arrive by</option>
+      </select>
+      <input id="when" type="datetime-local" aria-label="Date and time (India time)">
+    </div>
+    <div class="chips" id="sort" role="group" aria-label="Sort routes">
+      <button type="button" data-v="fastest">Fastest</button>
+      <button type="button" data-v="fewer_transfers">Fewer transfers</button>
+      <button type="button" data-v="comfort">Less crowded</button>
+    </div>
+  </form>
+  <div class="body" id="body"></div>
+</section>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-const map = L.map('map').setView([28.61, 77.21], 11);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 18, attribution: '&copy; OpenStreetMap'}).addTo(map);
+const S = {
+  from: {lat:28.6676, lng:77.2285, name:'ISBT Kashmiri Gate'},
+  to:   {lat:28.5494, lng:77.2510, name:'Nehru Place'},
+  mode: 'now', when: '2026-11-17T08:30', sort: 'fastest',
+  res: null, view: 'list', sel: 0,
+};
+const $ = id => document.getElementById(id);
+const COLORS = ['#1a63d8', '#e8710a', '#8e3fc1', '#0f8a83'];
+// The API keeps its internal crowding keys; these are display labels only
+const LV = {'座れる':['Seats', 't-seat'], '立つ':['Standing', 't-stand'], '混雑':['Crowded', 't-crowd'], '不明':['No data', 't-unk']};
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const dur = m => { m = Math.round(m); return m < 60 ? `${m} min` : `${Math.floor(m/60)} hr ${m%60} min`; };
+const addMin = (hhmm, m) => { const [h, mi] = hhmm.split(':').map(Number); const t = (h*60 + mi + Math.round(m) + 2880) % 1440; return `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`; };
+const isLive = s => /^live|live bus|visible|turning back/i.test(s || '');
+const buses = o => o.legs.filter(l => l.mode === 'bus');
+const color = (o, l) => COLORS[buses(o).indexOf(l) % COLORS.length];
+const tag = lv => { const [t, c] = LV[lv] || [lv, 't-unk']; return `<span class="tag ${c}">${esc(t)}</span>`; };
+
+// ---------- map ----------
+const map = L.map('map', {zoomControl:false}).setView([28.61, 77.21], 11);
+L.control.zoom({position:'bottomright'}).addTo(map);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  {maxZoom:19, className:'tiles', attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
 const layer = L.layerGroup().addTo(map);
-let clicks = 0, mFrom, mTo;
-const LV = {"座れる":"Seats","立つ":"Standing","混雑":"Crowded","不明":"Unknown"};
-const colors = {"座れる":"#1a7f4b","立つ":"#b7791f","混雑":"#c0392b","不明":"#98a2b3"};
-function setMarkers(){
-  const p = s => s.split(',').map(Number);
-  if (mFrom) map.removeLayer(mFrom); if (mTo) map.removeLayer(mTo);
-  mFrom = L.circleMarker(p(from.value), {radius:7, color:'#2457c5'}).addTo(map).bindTooltip('From');
-  mTo = L.circleMarker(p(to.value), {radius:7, color:'#111'}).addTo(map).bindTooltip('To');
+const pins = {};
+function placePin(k) {
+  const p = k === 'a' ? S.from : S.to;
+  if (!pins[k]) {
+    const icon = k === 'a' ? L.divIcon({className:'', html:'<div class="pin"></div>', iconSize:[18,18], iconAnchor:[9,9]})
+                           : L.divIcon({className:'', html:'<div class="pinb"></div>', iconSize:[26,26], iconAnchor:[13,30]});
+    pins[k] = L.marker([p.lat, p.lng], {icon, draggable:true, zIndexOffset:1000, title: k === 'a' ? 'Start (drag to move)' : 'Destination (drag to move)'}).addTo(map);
+    pins[k].on('dragend', e => { const ll = e.target.getLatLng(); setPlace(k, ll.lat, ll.lng); });
+  } else pins[k].setLatLng([p.lat, p.lng]);
 }
 map.on('click', e => {
-  const v = e.latlng.lat.toFixed(5)+','+e.latlng.lng.toFixed(5);
-  if (clicks % 2 === 0) from.value = v; else to.value = v;
-  clicks++; setMarkers();
+  const {lat, lng} = e.latlng;
+  const pop = L.popup({closeButton:false, minWidth:150}).setLatLng(e.latlng)
+    .setContent('<button class="popbtn" data-k="a">Start from here</button><button class="popbtn" data-k="b">Directions to here</button>').openOn(map);
+  pop.getElement().querySelectorAll('.popbtn').forEach(b => b.onclick = () => { map.closePopup(); setPlace(b.dataset.k, lat, lng); });
 });
-function draw(o){
-  layer.clearLayers();
-  for (const l of o.legs) if (l.mode==='bus') {
-    L.polyline(l.path, {color: colors[l.crowding.level]||'#555', weight:6, opacity:.85}).addTo(layer)
-      .bindTooltip(`${l.route} ${LV[l.crowding.level]||l.crowding.level}`);
-  }
-  const all = o.legs.filter(l=>l.mode==='bus').flatMap(l=>l.path);
-  if (all.length) map.fitBounds(L.latLngBounds(all).pad(0.2));
+// keep routes clear of the floating panel
+const pad = () => innerWidth > 760 ? {paddingTopLeft:[440, 40], paddingBottomRight:[40, 40]} : {paddingTopLeft:[20, 20], paddingBottomRight:[20, innerHeight * 0.62 + 20]};
+
+function setPlace(k, lat, lng, name) {
+  const p = {lat:+lat, lng:+lng, name: name || `Dropped pin (${(+lat).toFixed(4)}, ${(+lng).toFixed(4)})`};
+  if (k === 'a') S.from = p; else S.to = p;
+  $(k === 'a' ? 'fromIn' : 'toIn').value = p.name;
+  placePin(k);
+  search();
 }
-function legHtml(l){
-  if (l.mode==='walk') return `<div class="leg">🚶 Walk ${l.minutes} min (${l.meters} m) ${l.to_stop? '→ '+l.to_stop : '→ destination'}</div>`;
-  const c = l.crowding;
-  const conf = c.confidence ? `confidence: ${c.confidence}` : '';
-  let load = '';
-  if (c.load != null && c.load_90ci) load = `~${c.load} on board (90% interval ${c.load_90ci[0]}–${c.load_90ci[1]})`;
-  else if (c.load != null && c.load_range_assumptions) {
-    const [lo, hi] = c.load_range_assumptions;
-    load = lo === hi ? `avg ~${c.load} on board (capped by vehicle capacity)` : `avg ~${c.load} on board (range under assumptions ${lo}–${hi})`;
-  }
-  const prob = c.prob ? `seat ${Math.round(c.prob['座れる']*100)}% · standing ${Math.round(c.prob['立つ']*100)}% · crowded ${Math.round(c.prob['混雑']*100)}%` : '';
-  const p85 = l.ride_min_p85 ? ` · up to ${l.ride_min_p85} min (85%)` : '';
-  return `<div class="leg">🚌 <b>${l.route}</b> ${l.board.stop} → ${l.alight.stop} (${l.stops} stops)<br>
-    Wait ${l.wait_min} min<span class="muted"> (${l.wait_source})</span> · Ride ${l.ride_min} min<span class="muted">${p85}</span>
-    <span class="muted">(at 14:00: ${l.ride_min_at_14h} min · timetable: ${l.ride_min_timetable ?? '-'} min)</span><br>
-    <span class="badge b-${c.level}">${LV[c.level]||c.level}</span> <span class="muted">${prob}</span><br>
-    <span class="muted">${load} ${conf}</span></div>`;
+
+// ---------- stop search ----------
+function stopSearch(inp, box, k) {
+  let timer, items = [], on = 0;
+  const close = () => { box.style.display = 'none'; };
+  const pick = i => { const s = items[i]; close(); inp.blur(); setPlace(k, s.lat, s.lng, s.name); };
+  const render = () => {
+    box.innerHTML = items.length ? items.map((s, i) => `<div class="${i === on ? 'on' : ''}" data-i="${i}">${esc(s.name)}</div>`).join('')
+                                 : '<div class="none" style="color:var(--faint);cursor:default">No bus stop with that name. You can also click the map.</div>';
+    box.style.display = 'block';
+    box.querySelectorAll('[data-i]').forEach(d => d.onmousedown = ev => { ev.preventDefault(); pick(+d.dataset.i); });
+  };
+  inp.addEventListener('focus', () => inp.select());
+  inp.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = inp.value.trim();
+    if (q.length < 2) return close();
+    timer = setTimeout(async () => {
+      try {
+        const r = await fetch('/stops?' + new URLSearchParams({q, limit:60}));
+        const seen = new Set(); items = [];
+        for (const s of await r.json()) { const key = s.name.trim().toLowerCase(); if (!seen.has(key)) { seen.add(key); items.push(s); } }
+        items = items.slice(0, 8); on = 0; render();
+      } catch { close(); }
+    }, 180);
+  });
+  inp.addEventListener('keydown', e => {
+    if (box.style.display !== 'block' || !items.length) return;
+    if (e.key === 'ArrowDown') { on = (on + 1) % items.length; render(); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { on = (on - 1 + items.length) % items.length; render(); e.preventDefault(); }
+    else if (e.key === 'Enter') { e.preventDefault(); pick(on); }
+    else if (e.key === 'Escape') close();
+  });
+  inp.addEventListener('blur', () => { setTimeout(close, 120); inp.value = (k === 'a' ? S.from : S.to).name; });
 }
-async function go(){
-  setMarkers();
-  out.innerHTML = '<p class="muted">Searching…</p>';
-  const q = new URLSearchParams({from: from.value, to: to.value, [mode.value]: depart.value, sort: sort.value});
+stopSearch($('fromIn'), $('fromS'), 'a');
+stopSearch($('toIn'), $('toS'), 'b');
+$('f').onsubmit = e => e.preventDefault();
+$('swap').onclick = () => { [S.from, S.to] = [S.to, S.from]; $('fromIn').value = S.from.name; $('toIn').value = S.to.name; placePin('a'); placePin('b'); search(); };
+
+// ---------- time & sort ----------
+$('mode').onchange = e => { S.mode = e.target.value; syncWhen(); search(); };
+$('when').onchange = e => { if (e.target.value) { S.when = e.target.value; search(); } };
+function syncWhen() { $('when').style.display = S.mode === 'now' ? 'none' : ''; $('when').value = S.when; $('mode').value = S.mode; }
+const paintSort = () => $('sort').querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === S.sort));
+$('sort').querySelectorAll('button').forEach(b => b.onclick = () => { S.sort = b.dataset.v; paintSort(); search(); });
+
+// ---------- search ----------
+let seq = 0;
+async function search() {
+  const my = ++seq;
+  const q = {from:`${S.from.lat},${S.from.lng}`, to:`${S.to.lat},${S.to.lng}`, sort:S.sort, n:4};
+  if (S.mode === 'depart') q.depart = S.when; else if (S.mode === 'arrive') q.arrive = S.when;
+  S.view = 'list';
+  $('body').innerHTML = '<div class="status"><span>Finding buses…</span><span>usually a few seconds</span></div><div class="skel"></div><div class="skel"></div><div class="skel"></div>';
   try {
-    const r = await fetch('/journeys?' + q); const j = await r.json();
-    if (!r.ok) throw new Error(j.detail || r.status);
-    if (!j.options.length) { out.innerHTML = '<p>No route found.</p>'; layer.clearLayers(); return; }
-    // arrive-by: show the latest departure that made it on 85% of past days
-    const head = o => j.arrive_by
-      ? (o.depart
-          ? `<div class="big">Leave at ${o.depart} <span class="muted">arrived by ${j.arrive_by.slice(11,16)} on ${Math.round(o.on_time_share*100)}% of past days · typically arrive ${o.arrive} (${o.total_min} min) · ${o.transfers} transfer(s)</span></div>`
-          : `<div class="big">No reliable departure <span class="muted">${o.transfers} transfer(s)</span></div>`)
-      : `<div class="big">${o.total_min} min <span class="muted">arrive ${o.arrive}${o.arrive_safe ? ' (safe: ' + o.arrive_safe + ')' : ''} · ${o.transfers} transfer(s)</span></div>`;
-    out.innerHTML = j.options.map((o,k)=>`<div class="opt" data-k="${k}">
-      ${head(o)}
-      ${o.unreliable ? '<div class="muted">⚠ ' + o.total_source + '</div>' : (o.total_source ? '<div class="muted">' + o.total_source + '</div>' : '')}
-      ${o.safe_source && !o.arrive_safe ? '<div class="muted">⚠ ' + o.safe_source + '</div>' : ''}
-      <div class="muted">walk ${o.walk_min} · wait ${o.wait_min} · ride ${o.ride_min} · perceived ${o.perceived_min} min
-        <span class="badge b-${o.crowding_worst}">${LV[o.crowding_worst]||o.crowding_worst}</span></div>
-      ${o.legs.map(legHtml).join('')}</div>`).join('');
-    document.querySelectorAll('.opt').forEach(el => el.onclick = () => {
-      document.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel')); el.classList.add('sel'); draw(j.options[+el.dataset.k]);
-    });
-    document.querySelector('.opt').click();
-  } catch (e) { out.innerHTML = `<p>Error: ${e.message}</p>`; }
+    const r = await fetch('/journeys?' + new URLSearchParams(q));
+    const j = await r.json();
+    if (my !== seq) return;
+    if (!r.ok) throw new Error(typeof j.detail === 'string' ? j.detail : `server error ${r.status}`);
+    S.res = j; S.sel = 0; renderList();
+  } catch (e) {
+    if (my !== seq) return;
+    S.res = null; layer.clearLayers();
+    $('body').innerHTML = `<div class="msg err">Something went wrong: ${esc(e.message)}</div>`;
+  }
 }
-document.getElementById('go').onclick = go;
-setMarkers();
+
+// ---------- list view ----------
+function seqHtml(o) {
+  const out = [];
+  for (const l of o.legs) {
+    if (l.mode === 'walk') { if (l.minutes >= 1) out.push(`<span class="walkic" title="Walk ${Math.round(l.minutes)} min">🚶</span>`); }
+    else out.push(`<span class="bus" style="background:${color(o, l)}">🚌 ${esc(l.route)}</span>`);
+  }
+  return out.join('<span class="arr">›</span>');
+}
+function rowHtml(o, k, j) {
+  const arrive = !!j.arrive_by;
+  let line2, line3;
+  if (arrive && o.depart) {
+    line2 = `Leave <b>${esc(o.depart)}</b> · usually arrive ${esc(o.arrive)}`;
+    line3 = `On time on ${Math.round(o.on_time_share*100)}% of past days`;
+  } else if (arrive) {
+    line2 = 'No reliable departure'; line3 = 'Did not arrive in time on enough past days';
+  } else {
+    line2 = `${esc(j.depart.slice(11,16))} – ${esc(o.arrive)}`;
+    line3 = o.arrive_safe ? `Arrive by ${esc(o.arrive_safe)} to be safe` : '';
+  }
+  const tr = o.transfers === 0 ? 'Direct' : `${o.transfers} transfer${o.transfers > 1 ? 's' : ''}`;
+  const live = buses(o).some(l => isLive(l.wait_source)) ? ' · <span class="live">Live</span>' : '';
+  const warn = o.unreliable ? `<div class="warn">⚠ Unreliable: in most similar past cases the bus never came</div>`
+             : (o.safe_source && !o.arrive_safe ? `<div class="warn">⚠ No safe time: over 15% chance the bus does not come</div>` : '');
+  return `<div class="row" data-k="${k}">
+    <div class="r1"><div class="seq">${seqHtml(o)}</div><div class="dur">${dur(o.total_min)}</div></div>
+    <div class="r2">${line2}</div>
+    <div class="r3">${[line3, tr].filter(Boolean).join(' · ')} · ${tag(o.crowding_worst)}${live}</div>${warn}
+  </div>`;
+}
+function renderList() {
+  const j = S.res; S.view = 'list';
+  const usedLive = j.options.some(o => buses(o).some(l => isLive(l.wait_source)));
+  const when = j.arrive_by ? `Arrive by ${j.arrive_by.slice(11,16)}` : `Depart ${j.depart.slice(11,16)}`;
+  const day = j.day_type === 'weekend' ? 'weekend' : 'weekday';
+  const head = `<div class="status"><span>${esc(when)} · ${day}</span>${usedLive && j.realtime_feed && j.realtime_feed.time
+    ? `<span class="live">Live bus positions</span>` : '<span>From past trips</span>'}</div>`;
+  const about = `<div class="about">Times are learned from what Delhi's buses actually did (GPS, Oct 2026) and from live bus positions when you leave now — not from the timetable. Each route is replayed on past days to give a typical time and a safe time (85%). <a href="https://github.com/aoi01/transport-stack-hackathon-2026/blob/main/docs/technical_note.md" target="_blank" rel="noopener">How it works</a></div>`;
+  if (!j.options.length) {
+    layer.clearLayers(); fitPins();
+    $('body').innerHTML = head + '<div class="msg">No bus route found. Both points must be within 800 m walk of a bus stop.</div>' + about;
+    return;
+  }
+  $('body').innerHTML = head + j.options.map((o, k) => rowHtml(o, k, j)).join('') + about;
+  $('body').scrollTop = 0;
+  document.querySelectorAll('.row').forEach(el => {
+    const o = j.options[+el.dataset.k];
+    el.onclick = () => { S.sel = +el.dataset.k; renderDetail(); };
+    el.onmouseenter = () => draw(o, false);
+    el.onmouseleave = () => draw(j.options[S.sel], false);
+  });
+  draw(j.options[S.sel], true);
+}
+
+// ---------- detail view ----------
+function crowdHtml(c) {
+  if (!c) return '';
+  let mini = '';
+  if (c.prob) {
+    const s = Math.round((c.prob['座れる']||0)*100), st = Math.round((c.prob['立つ']||0)*100), cr = Math.round((c.prob['混雑']||0)*100);
+    mini = `<span class="mini" title="Seat ${s}% · Standing ${st}% · Crowded ${cr}%"><i style="width:${s}%;background:var(--seat)"></i><i style="width:${st}%;background:var(--stand)"></i><i style="width:${cr}%;background:var(--crowd)"></i></span>`;
+  }
+  return `<div class="crowd">${tag(c.level)}${mini}${c.load != null ? `<span class="n" style="margin:0">~${c.load} on board</span>` : ''}</div>`;
+}
+const waitNote = s => /^when /.test(s || '') ? 'Based on when buses actually came here on past days' : s;
+function renderDetail() {
+  const j = S.res, o = j.options[S.sel], arrive = !!j.arrive_by;
+  S.view = 'detail';
+  const start = arrive ? (o.depart || '') : j.depart.slice(11,16);
+  const steps = [];
+  const stop = (cls, tm, c, h, s, n) => steps.push(`<div class="st stop ${cls}" style="--c:${c}"><div class="tm">${esc(tm)}</div><div class="ln"><span class="nd"></span></div><div class="bd"><div class="h">${h}</div>${s ? `<div class="s">${s}</div>` : ''}${n ? `<div class="n">${n}</div>` : ''}</div></div>`);
+  const seg = (cls, c, s) => steps.push(`<div class="st ${cls}" style="--c:${c}"><div class="tm"></div><div class="ln"></div><div class="bd"><div class="s">${s}</div></div></div>`);
+  stop('first', start, '#5f6670', esc(S.from.name), '', '');
+  for (const l of o.legs) {
+    if (l.mode === 'walk') {
+      if (!(l.meters > 0)) continue;
+      seg('walk', '#aab1bb', `🚶 Walk ${Math.max(1, Math.round(l.minutes))} min (${l.meters} m)`);
+      continue;
+    }
+    const c = color(o, l);
+    const live = isLive(l.wait_source) ? ' <span class="live">Live</span>' : '';
+    stop('mid', l.board_time || '', c, `${esc(l.board.stop)}`,
+      `<span class="bus" style="background:${c}">🚌 ${esc(l.route)}</span> towards ${esc((l.headsign || '').split(' to ').pop())}`,
+      `Wait about ${Math.round(l.wait_min)} min${live} · ${esc(waitNote(l.wait_source))}`);
+    const tt = l.ride_min_timetable != null ? ` · timetable says ${Math.round(l.ride_min_timetable)} min` : '';
+    seg('ride', c, `Ride ${Math.round(l.ride_min)} min · ${l.stops} stop${l.stops === 1 ? '' : 's'}<div class="n">Up to ${Math.round(l.ride_min_p85 || l.ride_min)} min on a slow day${tt}</div>${crowdHtml(l.crowding)}`);
+    stop('mid', l.board_time ? addMin(l.board_time, l.ride_min) : '', c, `Get off at ${esc(l.alight.stop)}`, '', '');
+  }
+  stop('last', o.arrive, '#d0342c', esc(S.to.name), '', '');
+  const summary = arrive
+    ? (o.depart ? `<div class="dsum"><span class="big">Leave ${esc(o.depart)}</span><span class="tm">${dur(o.total_min)}</span></div>
+        <div class="safe">Leaving at ${esc(o.depart)} got you there by <b>${esc(j.arrive_by.slice(11,16))}</b> on <b>${Math.round(o.on_time_share*100)}%</b> of past ${j.day_type === 'weekend' ? 'weekend days' : 'weekdays'}. Usual arrival ${esc(o.arrive)}.</div>`
+                : `<div class="dsum"><span class="big">No reliable departure</span></div>`)
+    : `<div class="dsum"><span class="big">${dur(o.total_min)}</span><span class="tm">${esc(start)} – ${esc(o.arrive)}</span></div>
+       ${o.arrive_safe ? `<div class="safe">Usually arrives <b>${esc(o.arrive)}</b>. To be safe, plan for <b>${esc(o.arrive_safe)}</b> — met on 85% of trips.</div>`
+                       : (o.safe_source ? `<div class="safe">⚠ ${esc(o.safe_source)}</div>` : '')}`;
+  $('body').innerHTML = `<div class="dhead"><button class="back" id="back">← All routes</button>${summary}</div>
+    <div class="steps">${steps.join('')}</div>
+    ${o.total_source ? `<div class="basis">${esc(o.total_source)}</div>` : ''}`;
+  $('body').scrollTop = 0;
+  $('back').onclick = renderList;
+  draw(o, true);
+}
+
+// ---------- drawing ----------
+function draw(o, fit) {
+  layer.clearLayers();
+  const pts = [[S.from.lat, S.from.lng], [S.to.lat, S.to.lng]];
+  let prev = [S.from.lat, S.from.lng];
+  const walk = (a, b) => L.polyline([a, b], {color:'#5f6670', weight:4, dashArray:'1 8', lineCap:'round'}).addTo(layer);
+  for (const l of buses(o)) {
+    if (!l.path || !l.path.length) continue;
+    const c = color(o, l), a = l.path[0], b = l.path[l.path.length - 1];
+    walk(prev, a);
+    L.polyline(l.path, {color:'#fff', weight:10, opacity:1}).addTo(layer);
+    L.polyline(l.path, {color:c, weight:6}).addTo(layer).bindTooltip(`🚌 ${l.route}`, {sticky:true});
+    for (const [p, nm] of [[a, l.board.stop], [b, l.alight.stop]])
+      L.circleMarker(p, {radius:5, color:c, weight:3, fillColor:'#fff', fillOpacity:1}).addTo(layer).bindTooltip(nm);
+    pts.push(...l.path); prev = b;
+  }
+  walk(prev, [S.to.lat, S.to.lng]);
+  if (fit) map.fitBounds(L.latLngBounds(pts), pad());
+}
+function fitPins() { map.fitBounds(L.latLngBounds([[S.from.lat, S.from.lng], [S.to.lat, S.to.lng]]), pad()); }
+
+// ---------- start ----------
+$('fromIn').value = S.from.name; $('toIn').value = S.to.name;
+placePin('a'); placePin('b'); fitPins();
+syncWhen(); paintSort();
+search();
 </script>
 </body>
 </html>
