@@ -38,7 +38,7 @@ from app import i18n  # noqa: E402  説明文を英語にする（lang=en、既�
 
 IST = timezone(timedelta(hours=5, minutes=30))
 app = FastAPI(title="Delhi bus journey planner (Transport Stack Hackathon 2026)",
-              description="観測 GPS にもとづく所要時間と、乗車券にもとづく混雑度を示すバスの経路検索")
+              description="Bus journey options between two points in Delhi. Travel times are learned from observed bus GPS (October 2026) and live GTFS-RT positions; each option has a median time, a safe arrival (85th percentile), where each wait comes from, the GTFS timetable time for comparison, and expected crowding from e-tickets.")
 app.include_router(viz_router)
 planner = Planner("all")
 live = LiveFeed(planner)
@@ -75,19 +75,20 @@ def _pt(s: str):
         a, b = s.split(",")
         return float(a), float(b)
     except Exception as e:  # noqa: BLE001
-        raise HTTPException(400, f"座標は 'lat,lng' で指定してください: {s}") from e
+        raise HTTPException(400, f"give coordinates as 'lat,lng': {s}") from e
 
 
-@app.get("/journeys")
-def journeys(from_: str = Query(..., alias="from", examples=["28.6676,77.2285"]),
-             to: str = Query(..., examples=["28.5494,77.2510"]),
-             depart: str | None = Query(None, description="ISO 形式（IST）。省略時は現在時刻"),
-             arrive: str | None = Query(None, description="到着時刻を指定するとき（ISO 形式、IST）。過去の同じ種類の日の "
-                                        "85% で間に合う最も遅い出発を返す（depart より優先、リアルタイムは使わない）"),
-             sort: str = Query("fastest", pattern="^(fastest|comfort|fewer_transfers)$"),
-             realtime: bool = Query(True, description="出発が今から15分以内なら GTFS-RT で待ち時間を出す"),
-             n: int = Query(3, ge=1, le=6),
-             lang: str = Query("en", pattern="^(en|ja)$", description="説明文の言語（en / ja）")):
+@app.get("/journeys", summary="Journey options between two points")
+def journeys(from_: str = Query(..., alias="from", examples=["28.6676,77.2285"], description="Origin as lat,lng"),
+             to: str = Query(..., examples=["28.5494,77.2510"], description="Destination as lat,lng"),
+             depart: str | None = Query(None, description="Departure time, ISO 8601 in India time (e.g. 2026-11-17T08:30). Default: now"),
+             arrive: str | None = Query(None, description="Arrive-by time, ISO 8601 in India time. Returns the latest departure that arrived in time "
+                                        "on 85% of past days of the same type (overrides depart; no live data)"),
+             sort: str = Query("fastest", pattern="^(fastest|comfort|fewer_transfers)$",
+                               description="fastest, comfort (crowding-weighted) or fewer_transfers"),
+             realtime: bool = Query(True, description="Use live GTFS-RT bus positions for the first wait when departing within 15 minutes"),
+             n: int = Query(3, ge=1, le=6, description="Number of options (1-6)"),
+             lang: str = Query("en", pattern="^(en|ja)$", description="Language of the explanation texts (en / ja)")):
     o, d = _pt(from_), _pt(to)
     tr = i18n.response if lang == "en" else (lambda x: x)
     if arrive:
@@ -103,12 +104,12 @@ def journeys(from_: str = Query(..., alias="from", examples=["28.6676,77.2285"])
 
 @app.get("/live")
 def live_status():
-    """GTFS-RT の記録と直近の区間実績の状況。"""
+    """Status of the recorded GTFS-RT feed and of recent link speeds."""
     live_links.refresh(force=True)
     return live_links.stats
 
 
-@app.get("/stops")
+@app.get("/stops", summary="Search stops by name")
 def stops(q: str, limit: int = 10):
     s = C.stops()
     hit = s[s.stop_name.str.contains(q, case=False, na=False)].head(limit)

@@ -84,7 +84,8 @@ margin fitted on the calibration week).
 - Journey test: 600 random origin–destination pairs 3–15 km apart, departures 07–21 h on test days. The top option is
   replayed on the test-week GPS ("had you followed it, when would you have arrived?"). Error = |predicted − actual|
   door-to-door time.
-- Baselines: the GTFS timetable for the same option; planning ahead vs leaving now on the same pairs.
+- Baselines: the GTFS timetable for the same option; planning ahead vs leaving now on the same pairs; and
+  **Google Maps** (Routes API, transit restricted to buses) for the same pairs and times (section 6.1).
 
 ## 6. Results (held-out week 25–31 Oct)
 
@@ -106,6 +107,38 @@ margin fitted on the calibration week).
 Leaving now beats planning ahead on the same 353 pairs (16.0% → 12.9%; 95% bootstrap interval of the difference
 −4.9 to −0.2 points). Ride and wait rows are scored on interpolated passages; journey rows on interpolated passages
 with terminal fill and bridged split runs (the current ground truth, which can score 7% more top options than before).
+
+### 6.1 Against Google Maps
+
+Same 600 pairs and departure times. Google = Routes API `computeRoutes`, `travelMode=TRANSIT`, buses only; its
+time is arrival minus the requested departure (so it includes the first wait, like ours). The API does not accept
+past departures, so each pair was asked for the same weekday and time of day in the week of 30 Nov 2026. Google
+answered 599 of 600 pairs. Script: `experiments/p1_google/compare.py`; numbers: `results/google_compare_metrics.json`.
+
+| Door-to-door, median abs. error (actual = our top option followed on test-week GPS) | This prototype | Google Maps | GTFS timetable |
+|---|---|---|---|
+| Planning ahead (378 pairs) | **15.4%** (11.7 min) | 29.3% (22.1 min) | 23.9% (17.6 min) |
+| — within ±10 min | **45.5%** | 30.2% | 34.0% |
+| — median signed error (negative = too optimistic) | −2.9 min | −18.5 min | −13.7 min |
+| Leaving now (357 pairs) | **13.8%** (10.3 min) | 27.7% (18.5 min) | — |
+
+The difference with Google when planning ahead is −13.9 points (95% bootstrap interval −16.8 to −9.7).
+
+In the table above Google's estimate is for Google's own route, while "actual" is ours. For a fairer check we also
+replayed **Google's own route** on the test-week GPS: Google's line names and stop names were mapped to GTFS
+routes and stops (name match checked against position and Google's walking times). This worked for 225 pairs; on
+89 of them both routes could be followed to the end on GPS:
+
+| Same 89 pairs, each estimate against its own route's actual time | This prototype | Google Maps |
+|---|---|---|
+| Median abs. error | **17.6%** (9.9 min) | 32.2% (24.9 min) |
+| Within ±10 min | **50.6%** | 20.2% |
+| Median signed error | −0.3 min | −23.3 min |
+
+Google's route actually took a median 2.2 min longer than ours, and ours was faster on 62.9% of these pairs. On
+29% of the 225 mapped pairs, no bus of Google's first line came within 3 h on the test day (ours: 12%, section 6),
+although some of that may be mapping error. Google's times look timetable-like and optimistic, the same failure
+the GTFS timetable shows.
 
 ## 7. Why the remaining error is hard — what the data and Delhi's operations say
 
@@ -136,6 +169,8 @@ pairs — it failed our pre-registered adoption criteria).
 - At most one transfer; walking is straight-line × 1.3.
 - About 20% of top options cannot be scored because the bus is lost by GPS before the alighting stop.
 - The recent-link-speed feature and the inspector UI still use the 60 m passages.
+- Google Maps could only be asked about a later week (30 Nov–6 Dec) than the test week (25–31 Oct), and Google's own
+  route could be replayed on GPS for only 89 of 600 pairs, because its line and stop names often differ from GTFS.
 
 ## 9. Credits
 

@@ -40,6 +40,10 @@ A journey planner and API (`GET /journeys`) whose every number is learned from w
 | Door-to-door, planning ahead (median) | **16.1%** | 24.1% |
 | Arrive-by: arrived in time | **79.6%** | 29.6% |
 
+Against **Google Maps** (bus-only transit, same pairs and times): door-to-door median error **15.4% vs 29.3%**
+planning ahead and **13.8% vs 27.7%** leaving now. Google's times were a median 18.5 min too optimistic. Replaying
+Google's own route on GPS confirmed it: 32.2% error for Google against 17.6% for ours on the same 89 pairs.
+
 Full method and validation: [`technical_note.md`](technical_note.md).
 
 ## What is new

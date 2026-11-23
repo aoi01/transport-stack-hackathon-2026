@@ -77,6 +77,10 @@ def text(s):
     return s
 
 
+# 混雑の度合い（API の値。英語のときはこの値で返す）
+LEVEL = {"座れる": "seats", "立つ": "standing", "混雑": "crowded", "不明": "unknown"}
+
+
 def response(res: dict) -> dict:
     """/journeys の返り値の説明文を英語にする（数値・停留所名・路線名はそのまま）。"""
     for k in ("error",):
@@ -93,4 +97,10 @@ def response(res: dict) -> dict:
             c = l.get("crowding")
             if isinstance(c, dict) and c.get("confidence") in CONF:
                 c["confidence"] = CONF[c["confidence"]]
+            if isinstance(c, dict):
+                c["level"] = LEVEL.get(c.get("level"), c.get("level"))
+                if isinstance(c.get("prob"), dict):
+                    c["prob"] = {LEVEL.get(k, k): v for k, v in c["prob"].items()}
+        if "crowding_worst" in o:
+            o["crowding_worst"] = LEVEL.get(o["crowding_worst"], o["crowding_worst"])
     return res

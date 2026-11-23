@@ -1,0 +1,81 @@
+{
+ "note": "Same 600 OD pairs and departure times as the journey test (held-out week 25-31 Oct 2026). Actual = door-to-door time when the planner's top option is followed on that week's GPS. Google = Routes API transit (bus only), queried for the same weekday and time in the week of 2026-11-30 (the API does not accept past departure times); arrival minus requested departure.",
+ "pairs": 600,
+ "google_status": {
+  "ok": 599,
+  "no_route": 1
+ },
+ "planning_ahead": {
+  "pairs_scored": 378,
+  "ours": {
+   "n": 378,
+   "median_abs_pct_err": 15.4,
+   "median_abs_err_min": 11.7,
+   "within_10min_%": 45.5,
+   "median_signed_err_min": -2.9
+  },
+  "google": {
+   "n": 378,
+   "median_abs_pct_err": 29.3,
+   "median_abs_err_min": 22.1,
+   "within_10min_%": 30.2,
+   "median_signed_err_min": -18.5
+  },
+  "gtfs_timetable": {
+   "n": 373,
+   "median_abs_pct_err": 23.9,
+   "median_abs_err_min": 17.6,
+   "within_10min_%": 34.0,
+   "median_signed_err_min": -13.7
+  },
+  "ours_minus_google_pct_points_95ci": [
+   -16.8,
+   -9.7
+  ]
+ },
+ "leaving_now": {
+  "pairs_scored": 357,
+  "ours": {
+   "n": 357,
+   "median_abs_pct_err": 13.8,
+   "median_abs_err_min": 10.3,
+   "within_10min_%": 48.2,
+   "median_signed_err_min": -1.3
+  },
+  "google": {
+   "n": 357,
+   "median_abs_pct_err": 27.7,
+   "median_abs_err_min": 18.5,
+   "within_10min_%": 34.5,
+   "median_signed_err_min": -14.7
+  }
+ },
+ "google_own_route": {
+  "pairs_mapped_to_gtfs": 225,
+  "mapped_google_bus_never_came_%": 29.3,
+  "pairs_scored": 89,
+  "google_estimate_vs_google_route_actual": {
+   "n": 89,
+   "median_abs_pct_err": 32.2,
+   "median_abs_err_min": 24.9,
+   "within_10min_%": 20.2,
+   "median_signed_err_min": -23.3
+  },
+  "ours_estimate_vs_our_route_actual": {
+   "n": 89,
+   "median_abs_pct_err": 17.6,
+   "median_abs_err_min": 9.9,
+   "within_10min_%": 50.6,
+   "median_signed_err_min": -0.3
+  },
+  "actual_minutes_google_route_minus_ours_median": 2.2,
+  "our_route_actually_faster_%": 62.9
+ },
+ "google_minus_ours_planning_min_median": -18.7,
+ "google_transfers_share": {
+  "1.0": 0.531,
+  "0.0": 0.275,
+  "2.0": 0.184,
+  "3.0": 0.01
+ }
+}

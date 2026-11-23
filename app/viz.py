@@ -114,8 +114,8 @@ def _project(lat, lng, slat, slon, cum):
 
 
 @router.get("/viz/api/routes")
-def routes(q: str = Query("", description="路線番号の一部（例: 764, 534）"), limit: int = 30,
-           route_id: str | None = Query(None, description="この route_id の路線だけを返す")):
+def routes(q: str = Query("", description="Part of a route number (e.g. 764, 534)"), limit: int = 30,
+           route_id: str | None = Query(None, description="Return only this route_id")):
     p = _pat()
     g = p.groupby("route_id").agg(name=("route_short_name", "first"), desc=("route_desc", "first"),
                                    n_stops=("seq", "size"), km=("cum_m", "max")).reset_index()
@@ -219,7 +219,7 @@ def trip(route_id: str, date: str, vehicle_id: str, trip_id: str):
 
 @router.get("/viz/api/marey")
 def marey(route_id: str, date: str):
-    """その日の全便の通過（時刻, 距離）と、時刻表の便。"""
+    """Stop passages (time, distance) of every trip of the route on that day, and the timetable trips."""
     d = _day(date)
     pf, _ = _files(d)
     st = _route(route_id)
@@ -256,7 +256,7 @@ def _pair(route_id: str) -> list[dict]:
 
 @router.get("/viz/api/fleet")
 def fleet(route_id: str, date: str, step_s: int = Query(30, ge=5, le=120)):
-    """その日にこの系統（上り・下り）を走った全バスの GPS。地図で全バスを同時に動かすために、step_s 秒おきに間引く。"""
+    """GPS of every bus that ran this line (both directions) on that day, thinned to one point per step_s seconds."""
     d = _day(date)
     _, gf = _files(d)
     pair = _pair(route_id)
@@ -294,7 +294,7 @@ def _overview() -> dict:
 
 @router.get("/viz/api/overview")
 def overview():
-    """10月の全体と日ごとに、通過を検出した路線・車両・便・通過の数。"""
+    """Routes, vehicles, trips and stop passages detected, for the whole of October and per day."""
     return _overview()
 
 
