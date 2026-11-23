@@ -140,7 +140,7 @@ pairs — it failed our pre-registered adoption criteria).
 ## 9. Credits
 
 Open-source libraries: DuckDB, pandas, NumPy, Polars, PyArrow, LightGBM, SciPy, RapidFuzz, FastAPI, Uvicorn,
-Matplotlib, gtfs-realtime-bindings, py7zr, Leaflet, OpenStreetMap tiles. Data: Delhi Transport Stack (DTC bus GPS,
+Matplotlib, gtfs-realtime-bindings, py7zr, Leaflet, Material Symbols icons, OpenStreetMap tiles. Data: Delhi Transport Stack (DTC bus GPS,
 GTFS static, GTFS-RT via Open Transit Data). AI tools: code, analyses and documents were written with
 **Claude Code (Anthropic)** as an AI pair-programmer and research assistant; every number above was produced by
 running the code in this repository on the hackathon data.

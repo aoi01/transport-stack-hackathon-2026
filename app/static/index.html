@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Delhi Bus Planner</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..700,0..1,0&display=block">
 <style>
+  .ic { font-family:"Material Symbols Rounded"; font-weight:normal; font-style:normal; font-size:1.25em; line-height:1; display:inline-block; vertical-align:-0.22em; letter-spacing:normal; text-transform:none; white-space:nowrap; font-feature-settings:"liga"; -webkit-font-smoothing:antialiased; font-variation-settings:"FILL" 1, "wght" 500, "opsz" 20; user-select:none; }
   :root {
     --fg:#1f2329; --muted:#5f6670; --faint:#8a919b; --line:#e6e8eb; --soft:#f2f4f6; --hover:#f6f8fa;
     --accent:#1a63d8; --accent-soft:#e9f1fe; --live:#d0342c; --warn:#a15c00;
@@ -39,7 +41,7 @@
   .swap:hover { background:var(--soft); color:var(--fg); }
   .sugg { position:absolute; z-index:5; left:0; right:0; top:calc(100% + 4px); background:#fff; border-radius:8px; box-shadow:var(--shadow); max-height:300px; overflow:auto; display:none; }
   .sugg div { display:flex; gap:10px; align-items:center; padding:9px 12px; cursor:pointer; }
-  .sugg div::before { content:"🚏"; font-size:13px; }
+  .sugg div::before { content:"location_on"; font-family:"Material Symbols Rounded"; font-feature-settings:"liga"; font-size:18px; line-height:1; color:var(--muted); font-variation-settings:"FILL" 1; }
   .sugg div.none::before { content:none; }
   .sugg div:hover, .sugg div.on { background:var(--soft); }
 
@@ -123,11 +125,11 @@
 
 <section class="panel" aria-label="Journey planner">
   <form class="search" id="f" autocomplete="off">
-    <div class="brand"><b>Delhi Bus Planner</b><a href="/passages">Stop-passage inspector →</a></div>
+    <div class="brand"><b>Delhi Bus Planner</b><a href="/passages">Stop-passage inspector <span class="ic" aria-hidden="true">arrow_forward</span></a></div>
     <div class="places">
       <span class="ico"><i></i></span>
       <div class="field"><input id="fromIn" placeholder="Choose starting point" aria-label="Starting point"><div class="sugg" id="fromS"></div></div>
-      <button type="button" class="swap" id="swap" title="Swap" aria-label="Swap start and destination">⇅</button>
+      <button type="button" class="swap" id="swap" title="Swap" aria-label="Swap start and destination"><span class="ic" aria-hidden="true">swap_vert</span></button>
       <span class="ico"><i class="b"></i></span>
       <div class="field"><input id="toIn" placeholder="Choose destination" aria-label="Destination"><div class="sugg" id="toS"></div></div>
       <span class="dots"></span>
@@ -273,8 +275,8 @@ async function search() {
 function seqHtml(o) {
   const out = [];
   for (const l of o.legs) {
-    if (l.mode === 'walk') { if (l.minutes >= 1) out.push(`<span class="walkic" title="Walk ${Math.round(l.minutes)} min">🚶</span>`); }
-    else out.push(`<span class="bus" style="background:${color(o, l)}">🚌 ${esc(l.route)}</span>`);
+    if (l.mode === 'walk') { if (l.minutes >= 1) out.push(`<span class="walkic" title="Walk ${Math.round(l.minutes)} min"><span class="ic" aria-hidden="true">directions_walk</span></span>`); }
+    else out.push(`<span class="bus" style="background:${color(o, l)}"><span class="ic" aria-hidden="true">directions_bus</span>${esc(l.route)}</span>`);
   }
   return out.join('<span class="arr">›</span>');
 }
@@ -292,8 +294,8 @@ function rowHtml(o, k, j) {
   }
   const tr = o.transfers === 0 ? 'Direct' : `${o.transfers} transfer${o.transfers > 1 ? 's' : ''}`;
   const live = buses(o).some(l => isLive(l.wait_source)) ? ' · <span class="live">Live</span>' : '';
-  const warn = o.unreliable ? `<div class="warn">⚠ Unreliable: in most similar past cases the bus never came</div>`
-             : (o.safe_source && !o.arrive_safe ? `<div class="warn">⚠ No safe time: over 15% chance the bus does not come</div>` : '');
+  const warn = o.unreliable ? `<div class="warn"><span class="ic" aria-hidden="true">warning</span> Unreliable: in most similar past cases the bus never came</div>`
+             : (o.safe_source && !o.arrive_safe ? `<div class="warn"><span class="ic" aria-hidden="true">warning</span> No safe time: over 15% chance the bus does not come</div>` : '');
   return `<div class="row" data-k="${k}">
     <div class="r1"><div class="seq">${seqHtml(o)}</div><div class="dur">${dur(o.total_min)}</div></div>
     <div class="r2">${line2}</div>
@@ -346,13 +348,13 @@ function renderDetail() {
   for (const l of o.legs) {
     if (l.mode === 'walk') {
       if (!(l.meters > 0)) continue;
-      seg('walk', '#aab1bb', `🚶 Walk ${Math.max(1, Math.round(l.minutes))} min (${l.meters} m)`);
+      seg('walk', '#aab1bb', `<span class="ic" aria-hidden="true">directions_walk</span> Walk ${Math.max(1, Math.round(l.minutes))} min (${l.meters} m)`);
       continue;
     }
     const c = color(o, l);
     const live = isLive(l.wait_source) ? ' <span class="live">Live</span>' : '';
     stop('mid', l.board_time || '', c, `${esc(l.board.stop)}`,
-      `<span class="bus" style="background:${c}">🚌 ${esc(l.route)}</span> towards ${esc((l.headsign || '').split(' to ').pop())}`,
+      `<span class="bus" style="background:${c}"><span class="ic" aria-hidden="true">directions_bus</span>${esc(l.route)}</span> towards ${esc((l.headsign || '').split(' to ').pop())}`,
       `Wait about ${Math.round(l.wait_min)} min${live} · ${esc(waitNote(l.wait_source))}`);
     const tt = l.ride_min_timetable != null ? ` · timetable says ${Math.round(l.ride_min_timetable)} min` : '';
     seg('ride', c, `Ride ${Math.round(l.ride_min)} min · ${l.stops} stop${l.stops === 1 ? '' : 's'}<div class="n">Up to ${Math.round(l.ride_min_p85 || l.ride_min)} min on a slow day${tt}</div>${crowdHtml(l.crowding)}`);
@@ -365,8 +367,8 @@ function renderDetail() {
                 : `<div class="dsum"><span class="big">No reliable departure</span></div>`)
     : `<div class="dsum"><span class="big">${dur(o.total_min)}</span><span class="tm">${esc(start)} – ${esc(o.arrive)}</span></div>
        ${o.arrive_safe ? `<div class="safe">Usually arrives <b>${esc(o.arrive)}</b>. To be safe, plan for <b>${esc(o.arrive_safe)}</b> — met on 85% of trips.</div>`
-                       : (o.safe_source ? `<div class="safe">⚠ ${esc(o.safe_source)}</div>` : '')}`;
-  $('body').innerHTML = `<div class="dhead"><button class="back" id="back">← All routes</button>${summary}</div>
+                       : (o.safe_source ? `<div class="safe"><span class="ic" aria-hidden="true">warning</span> ${esc(o.safe_source)}</div>` : '')}`;
+  $('body').innerHTML = `<div class="dhead"><button class="back" id="back"><span class="ic" aria-hidden="true">arrow_back</span> All routes</button>${summary}</div>
     <div class="steps">${steps.join('')}</div>
     ${o.total_source ? `<div class="basis">${esc(o.total_source)}</div>` : ''}`;
   $('body').scrollTop = 0;
@@ -385,7 +387,7 @@ function draw(o, fit) {
     const c = color(o, l), a = l.path[0], b = l.path[l.path.length - 1];
     walk(prev, a);
     L.polyline(l.path, {color:'#fff', weight:10, opacity:1}).addTo(layer);
-    L.polyline(l.path, {color:c, weight:6}).addTo(layer).bindTooltip(`🚌 ${l.route}`, {sticky:true});
+    L.polyline(l.path, {color:c, weight:6}).addTo(layer).bindTooltip(`<span class="ic" aria-hidden="true">directions_bus</span> ${l.route}`, {sticky:true});
     for (const [p, nm] of [[a, l.board.stop], [b, l.alight.stop]])
       L.circleMarker(p, {radius:5, color:c, weight:3, fillColor:'#fff', fillOpacity:1}).addTo(layer).bindTooltip(nm);
     pts.push(...l.path); prev = b;

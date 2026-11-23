@@ -81,7 +81,7 @@ The planner also shows expected crowding per leg (seat / standing / crowded prob
 ## Credits
 
 - Open-source libraries: DuckDB, pandas, NumPy, Polars, PyArrow, LightGBM, SciPy, RapidFuzz, FastAPI, Uvicorn,
-  Matplotlib, gtfs-realtime-bindings, py7zr, Leaflet; map tiles © OpenStreetMap contributors.
+  Matplotlib, gtfs-realtime-bindings, py7zr, Leaflet, Material Symbols icons; map tiles © OpenStreetMap contributors.
 - Data: Delhi Transport Stack (DTC bus GPS, GTFS static, GTFS-RT via Open Transit Data).
 - AI tools: code, analyses and documents were developed with **Claude Code (Anthropic)** as an AI pair-programmer and
   research assistant. All reported numbers come from running the code in this repository on the hackathon data.

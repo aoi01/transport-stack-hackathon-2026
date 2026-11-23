@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Stop passage inspector</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..700,0..1,0&display=block">
 <style>
+  .ic { font-family:"Material Symbols Rounded"; font-weight:normal; font-style:normal; font-size:1.25em; line-height:1; display:inline-block; vertical-align:-0.22em; letter-spacing:normal; text-transform:none; white-space:nowrap; font-feature-settings:"liga"; -webkit-font-smoothing:antialiased; font-variation-settings:"FILL" 1, "wght" 500, "opsz" 20; user-select:none; }
   :root { --fg:#1d2433; --muted:#667085; --line:#e4e7ec; --soft:#f5f7fa; --pass:#1a7f4b; --order:#b7791f; --none:#c0392b; --sel:#e07a3a; --accent:#2457c5; --same:#2457c5; --opp:#7a4cc2; }
   * { box-sizing:border-box; }
   html, body { height:100%; }
@@ -59,7 +61,7 @@
 <div class="wrap">
 <aside>
   <h1>Stop passage inspector</h1>
-  <div class="sub">Which bus passed which stop, and when — detected from bus GPS (Oct 2026). Inspect one trip in detail while every bus of the same line (both directions) moves on the map at the same time. <a href="/">← Back to the journey planner</a></div>
+  <div class="sub">Which bus passed which stop, and when — detected from bus GPS (Oct 2026). Inspect one trip in detail while every bus of the same line (both directions) moves on the map at the same time. <a href="/"><span class="ic" aria-hidden="true">arrow_back</span> Back to the journey planner</a></div>
   <div id="overview" class="hint">Loading coverage…</div>
   <div class="hint"><b>How a passage is detected (this view)</b>: among GPS points (about every 11 s) within 60 m of a stop, the time of the closest one is the passage. Passages out of stop order (GPS noise, turning back, revisits) are dropped, and trips with fewer than 5 stops detected are not used. The planner itself fills the remaining stops by projecting GPS onto the route and interpolating (96% of passages).</div>
   <div class="row">
@@ -90,7 +92,7 @@
   <div id="map"></div>
   <div id="chartbox">
     <div class="tool">
-      <button id="play">▶ Play</button>
+      <button id="play"><span class="ic" aria-hidden="true">play_arrow</span> Play</button>
       <select id="speed"><option value="30">30×</option><option value="60" selected>60×</option><option value="180">180×</option><option value="600">600×</option></select>
       <input id="slider" type="range" min="0" max="1" step="1" value="0">
       <span id="tlabel">--:--:--</span>
@@ -379,8 +381,8 @@ function frame(ts) {
   }
   lastTs = ts; raf = requestAnimationFrame(frame);
 }
-function play() { if (!S.trip) return; if (S.cur >= +$('slider').max) setTime(+$('slider').min); S.playing = true; lastTs = null; $('play').textContent = '⏸ Pause'; raf = requestAnimationFrame(frame); }
-function stop() { S.playing = false; $('play').textContent = '▶ Play'; if (raf) cancelAnimationFrame(raf); raf = null; }
+function play() { if (!S.trip) return; if (S.cur >= +$('slider').max) setTime(+$('slider').min); S.playing = true; lastTs = null; $('play').innerHTML = '<span class="ic" aria-hidden="true">pause</span> Pause'; raf = requestAnimationFrame(frame); }
+function stop() { S.playing = false; $('play').innerHTML = '<span class="ic" aria-hidden="true">play_arrow</span> Play'; if (raf) cancelAnimationFrame(raf); raf = null; }
 
 // ---- 時間・距離の図（マーレイ図） ----
 const NS = 'http://www.w3.org/2000/svg';
